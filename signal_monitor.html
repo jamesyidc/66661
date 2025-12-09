@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟币系统信号监控</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #eee;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 36px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav-link {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 0 10px;
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.5);
+            border-radius: 8px;
+            color: #00d4ff;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover {
+            background: rgba(0, 212, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 212, 255, 0.05));
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-value.blue {
+            color: #00d4ff;
+        }
+
+        .stat-value.red {
+            color: #ff4757;
+        }
+
+        .stat-value.green {
+            color: #2ed573;
+        }
+
+        .stat-value.yellow {
+            color: #ffa502;
+        }
+
+        .stat-change {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .change-up {
+            color: #2ed573;
+        }
+
+        .change-down {
+            color: #ff4757;
+        }
+
+        .change-neutral {
+            color: #888;
+        }
+
+        .time-display {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .time-display h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
+        .time-display .time {
+            font-size: 24px;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .chart-title {
+            font-size: 20px;
+            color: #00d4ff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .query-panel {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .query-panel h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+
+        .query-form {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #888;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #00d4ff;
+            color: #0f2027;
+        }
+
+        .btn-primary:hover {
+            background: #00b8e6;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .update-info {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 212, 255, 0.1);
+            border-left-color: #00d4ff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+        }
+
+        .alert-warning {
+            background: rgba(255, 165, 2, 0.1);
+            border: 1px solid rgba(255, 165, 2, 0.3);
+            color: #ffa502;
+        }
+
+        .alert-error {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            color: #ff4757;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 虚拟币系统信号监控</h1>
+        <div class="subtitle">实时监控做空/做多信号 | 每3分钟自动更新 | 数据源: Google Drive</div>
+
+        <div class="nav-links">
+            <a href="/" class="nav-link">← 返回主页</a>
+            <a href="/panic" class="nav-link">恐慌指数</a>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="time-display">
+            <h3>📅 当前监控时间</h3>
+            <div class="time" id="currentTime">加载中...</div>
+            <div style="margin-top: 10px; color: #888; font-size: 14px;">
+                数据文件夹: <span id="currentFolder">加载中...</span>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>正在加载信号数据...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <div class="stat-label">📉 总信号数</div>
+                    <div class="stat-value blue" id="totalSignals">0</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">🔻 做空信号</div>
+                    <div class="stat-value red" id="shortCount">0</div>
+                    <div class="stat-change" id="shortChange">
+                        <span class="change-neutral">变化: 0</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">🔺 做多信号</div>
+                    <div class="stat-value green" id="longCount">0</div>
+                    <div class="stat-change" id="longChange">
+                        <span class="change-neutral">变化: 0</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">⏰ 最后更新</div>
+                    <div class="stat-value yellow" id="lastUpdate" style="font-size: 18px;">--:--:--</div>
+                </div>
+            </div>
+
+            <!-- 历史查询 -->
+            <div class="query-panel">
+                <h3>🔍 历史数据查询</h3>
+                <div class="query-form">
+                    <div class="form-group">
+                        <label>开始日期</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label>开始时间</label>
+                        <input type="time" id="startTime" value="00:00">
+                    </div>
+                    <div class="form-group">
+                        <label>结束日期</label>
+                        <input type="date" id="endDate">
+                    </div>
+                    <div class="form-group">
+                        <label>结束时间</label>
+                        <input type="time" id="endTime" value="23:59">
+                    </div>
+                    <button class="btn btn-primary" onclick="queryHistory()">🔍 查询</button>
+                    <button class="btn btn-secondary" onclick="resetQuery()">重置</button>
+                </div>
+            </div>
+
+            <!-- 图表 -->
+            <div class="chart-container">
+                <div class="chart-title">📊 信号趋势图</div>
+                <canvas id="signalChart"></canvas>
+            </div>
+
+            <div class="update-info">
+                <p>⏱️ 自动刷新: 每3分钟</p>
+                <p>🕐 日期切换: 每天0点5分自动切换到新日期文件夹</p>
+                <p>📁 数据源: Google Drive 共享文件夹</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let signalChart = null;
+        let autoRefreshInterval = null;
+        let currentFolderDate = null;
+
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('signalChart').getContext('2d');
+            signalChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '做空信号',
+                            data: [],
+                            borderColor: '#ff4757',
+                            backgroundColor: 'rgba(255, 71, 87, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '做多信号',
+                            data: [],
+                            borderColor: '#2ed573',
+                            backgroundColor: 'rgba(46, 213, 115, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff',
+                                font: { size: 14 }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#bbb' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#bbb' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新图表数据
+        function updateChart(historyData) {
+            if (!signalChart) {
+                initChart();
+            }
+
+            const labels = historyData.map(item => {
+                const time = item.record_time.split(' ')[1] || '';
+                return time.substring(0, 5); // HH:MM
+            });
+
+            const shortCounts = historyData.map(item => item.short_count);
+            const longCounts = historyData.map(item => item.long_count);
+
+            signalChart.data.labels = labels;
+            signalChart.data.datasets[0].data = shortCounts;
+            signalChart.data.datasets[1].data = longCounts;
+            signalChart.update();
+        }
+
+        // 初始化
+        async function init() {
+            initChart();
+            await loadLatestSignal();
+            await loadTodayHistory(); // 加载今天的历史数据用于图表显示
+            
+            // 设置今天日期为默认值
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = today;
+            document.getElementById('endDate').value = today;
+
+            // 每3分钟刷新一次
+            autoRefreshInterval = setInterval(async () => {
+                await loadLatestSignal();
+                await loadTodayHistory();
+            }, 180000); // 3分钟 = 180000毫秒
+
+            // 每分钟检查是否需要切换日期（0点5分）
+            setInterval(checkDateSwitch, 60000);
+        }
+
+        // 加载今天的历史数据
+        async function loadTodayHistory() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const response = await fetch(
+                    `/api/signal-monitor/history?start_date=${today}&end_date=${today}&start_time=00:00:00&end_time=23:59:59`
+                );
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    updateChart(result.data);
+                }
+            } catch (error) {
+                console.error('加载今天历史数据失败:', error);
+            }
+        }
+
+        // 检查是否需要切换日期
+        function checkDateSwitch() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+
+            // 每天0点5分刷新
+            if (hour === 0 && minute === 5) {
+                console.log('检测到0点5分，刷新日期...');
+                window.location.reload();
+            }
+        }
+
+        // 加载最新信号
+        async function loadLatestSignal() {
+            try {
+                const response = await fetch('/api/signal-monitor/latest');
+                const result = await response.json();
+
+                if (result.success) {
+                    updateDisplay(result);
+                    hideLoading();
+                } else {
+                    showAlert('warning', result.message || '无法获取数据');
+                    hideLoading();
+                }
+
+                // 更新当前时间
+                updateCurrentTime();
+            } catch (error) {
+                console.error('加载失败:', error);
+                showAlert('error', '网络错误: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // 更新显示
+        function updateDisplay(result) {
+            // 更新时间和文件夹
+            document.getElementById('currentTime').textContent = result.current_time || '--:--:--';
+            document.getElementById('currentFolder').textContent = result.current_folder || '未知';
+            currentFolderDate = result.current_folder;
+
+            if (result.data) {
+                const data = result.data;
+                
+                // 更新统计卡片
+                const totalSignals = (data.short_count || 0) + (data.long_count || 0);
+                document.getElementById('totalSignals').textContent = totalSignals;
+                document.getElementById('shortCount').textContent = data.short_count || 0;
+                document.getElementById('longCount').textContent = data.long_count || 0;
+                document.getElementById('lastUpdate').textContent = 
+                    (data.record_time || '').split(' ')[1] || '--:--:--';
+
+                // 更新变化
+                updateChange('shortChange', data.short_change || 0);
+                updateChange('longChange', data.long_change || 0);
+            }
+
+            // 显示提示信息
+            if (result.message) {
+                showAlert('info', result.message);
+            }
+        }
+
+        // 更新变化显示
+        function updateChange(elementId, change) {
+            const element = document.getElementById(elementId);
+            let className = 'change-neutral';
+            let prefix = '变化: ';
+            
+            if (change > 0) {
+                className = 'change-up';
+                prefix = '↑ +';
+            } else if (change < 0) {
+                className = 'change-down';
+                prefix = '↓ ';
+            }
+
+            element.innerHTML = `<span class="${className}">${prefix}${change}</span>`;
+        }
+
+        // 更新当前时间显示
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false });
+            const dateStr = now.toLocaleDateString('zh-CN');
+            document.getElementById('currentTime').textContent = `${dateStr} ${timeStr}`;
+        }
+
+        // 查询历史数据
+        async function queryHistory() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+
+            if (!startDate || !endDate) {
+                alert('请选择开始日期和结束日期');
+                return;
+            }
+
+            try {
+                showAlert('info', '正在查询历史数据...');
+                
+                const response = await fetch(
+                    `/api/signal-monitor/history?start_date=${startDate}&end_date=${endDate}&start_time=${startTime}&end_time=${endTime}`
+                );
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    showAlert('info', `查询成功：找到 ${result.count} 条记录`);
+                    
+                    if (result.data.length > 0) {
+                        updateChart(result.data);
+                    } else {
+                        showAlert('warning', '该时间段内没有数据');
+                    }
+                } else {
+                    showAlert('warning', result.message || '查询失败');
+                }
+            } catch (error) {
+                showAlert('error', '查询失败: ' + error.message);
+            }
+        }
+
+        // 重置查询
+        function resetQuery() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = today;
+            document.getElementById('endDate').value = today;
+            document.getElementById('startTime').value = '00:00';
+            document.getElementById('endTime').value = '23:59';
+        }
+
+        // 显示提示
+        function showAlert(type, message) {
+            const container = document.getElementById('alert-container');
+            const alertClass = `alert-${type}`;
+            
+            container.innerHTML = `
+                <div class="alert ${alertClass}">
+                    ${type === 'info' ? 'ℹ️' : type === 'warning' ? '⚠️' : '❌'} ${message}
+                </div>
+            `;
+
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 3000);
+        }
+
+        // 隐藏加载动画
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+        }
+
+        // 页面加载完成后初始化
+        window.onload = init;
+    </script>
+</body>
+</html>

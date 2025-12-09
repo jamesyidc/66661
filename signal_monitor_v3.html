@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟币信号监控</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        /* 表格样式 */
+        .data-table-container {
+            margin-bottom: 40px;
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .data-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table th {
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .data-table th:last-child {
+            border-right: none;
+        }
+
+        .data-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* 斑马纹 */
+        .data-table tbody tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .data-table tbody tr:nth-child(even):hover {
+            background: #f0f0f0;
+        }
+
+        /* 数值样式 */
+        .value-short {
+            color: #f44336;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .value-long {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .value-change {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .value-change.positive {
+            color: #4CAF50;
+        }
+
+        .value-change.negative {
+            color: #f44336;
+        }
+
+        .value-time {
+            color: #666;
+            font-size: 13px;
+        }
+
+        /* 行号 */
+        .row-number {
+            color: #999;
+            font-size: 12px;
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            position: relative;
+            height: 450px;
+        }
+
+        .chart-title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .stats-info {
+            text-align: center;
+            padding: 15px;
+            background: #e8eaf6;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            color: #5e35b1;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 30px;
+            color: #f44336;
+            background: #ffebee;
+            border-radius: 10px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px;
+                font-size: 12px;
+            }
+
+            .value-short,
+            .value-long {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 虚拟币信号监控</h1>
+        <div class="subtitle">全天信号数据记录</div>
+        
+        <!-- 统计信息 -->
+        <div id="stats-info" class="stats-info">
+            加载中...
+        </div>
+
+        <!-- 历史曲线图 -->
+        <div class="chart-container">
+            <div class="chart-title">📈 全天趋势曲线</div>
+            <canvas id="signalChart"></canvas>
+        </div>
+
+        <!-- 历史数据表格 -->
+        <div class="data-table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">#</th>
+                        <th style="width: 100px;">🔴 做空信号</th>
+                        <th style="width: 100px;">变化</th>
+                        <th style="width: 100px;">🟢 做多信号</th>
+                        <th style="width: 100px;">变化</th>
+                        <th>📅 更新时间</th>
+                    </tr>
+                </thead>
+                <tbody id="data-table-body">
+                    <tr>
+                        <td colspan="6" class="loading">加载中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let signalChart = null;
+
+        async function loadHistoryData() {
+            try {
+                // 查询今天的所有数据（添加时间戳强制刷新）
+                const today = new Date().toISOString().split('T')[0];
+                const timestamp = new Date().getTime();
+                const response = await fetch(`/api/monitor/signal/history?date=${today}&_t=${timestamp}`);
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    displayTable(result.data);
+                    displayChart(result.data);
+                    displayStats(result.data);
+                } else {
+                    // 如果没有今天的数据，查询最近24小时
+                    const timestamp2 = new Date().getTime();
+                    const response2 = await fetch(`/api/monitor/signal/history?hours=24&_t=${timestamp2}`);
+                    const result2 = await response2.json();
+                    
+                    if (result2.success && result2.data && result2.data.length > 0) {
+                        displayTable(result2.data);
+                        displayChart(result2.data);
+                        displayStats(result2.data);
+                    } else {
+                        showError('暂无历史数据');
+                    }
+                }
+            } catch (error) {
+                console.error('加载失败:', error);
+                showError('网络连接失败');
+            }
+        }
+
+        function displayStats(data) {
+            const totalRecords = data.length;
+            const firstTime = data[0].time;
+            const lastTime = data[data.length - 1].time;
+            
+            document.getElementById('stats-info').innerHTML = `
+                📊 共 ${totalRecords} 条记录 | 
+                ⏰ 时间范围: ${firstTime} ~ ${lastTime}
+            `;
+        }
+
+        function displayTable(data) {
+            let html = '';
+            
+            // 倒序显示（最新的在上面）
+            for (let i = data.length - 1; i >= 0; i--) {
+                const item = data[i];
+                const rowNum = data.length - i;
+                
+                const shortChange = parseInt(item.short_change);
+                const longChange = parseInt(item.long_change);
+                
+                const shortChangeClass = shortChange > 0 ? 'positive' : shortChange < 0 ? 'negative' : '';
+                const longChangeClass = longChange > 0 ? 'positive' : longChange < 0 ? 'negative' : '';
+                
+                const shortChangeText = shortChange > 0 ? `+${shortChange}` : shortChange;
+                const longChangeText = longChange > 0 ? `+${longChange}` : longChange;
+                
+                html += `
+                    <tr>
+                        <td class="row-number">${rowNum}</td>
+                        <td><span class="value-short">${item.short}</span></td>
+                        <td><span class="value-change ${shortChangeClass}">${shortChangeText}</span></td>
+                        <td><span class="value-long">${item.long}</span></td>
+                        <td><span class="value-change ${longChangeClass}">${longChangeText}</span></td>
+                        <td><span class="value-time">${item.time}</span></td>
+                    </tr>
+                `;
+            }
+            
+            document.getElementById('data-table-body').innerHTML = html;
+        }
+
+        function displayChart(historyData) {
+            // 准备数据
+            const times = historyData.map(item => {
+                const time = new Date(item.time);
+                return time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            });
+            const shortValues = historyData.map(item => item.short);
+            const longValues = historyData.map(item => item.long);
+
+            // 销毁旧图表
+            if (signalChart) {
+                signalChart.destroy();
+            }
+
+            // 创建新图表
+            const ctx = document.getElementById('signalChart').getContext('2d');
+            signalChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: times,
+                    datasets: [
+                        {
+                            label: '🔴 做空信号',
+                            data: shortValues,
+                            borderColor: 'rgb(244, 67, 54)',
+                            backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: 'rgb(244, 67, 54)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: '🟢 做多信号',
+                            data: longValues,
+                            borderColor: 'rgb(76, 175, 80)',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: 'rgb(76, 175, 80)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 10
+                                },
+                                maxRotation: 45,
+                                minRotation: 0,
+                                maxTicksLimit: 20
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('data-table-body').innerHTML = `
+                <tr>
+                    <td colspan="6" class="error">❌ ${message}</td>
+                </tr>
+            `;
+            document.getElementById('stats-info').innerHTML = `❌ ${message}`;
+        }
+
+        // 页面加载时获取数据
+        loadHistoryData();
+        
+        // 每3分钟刷新数据（180秒）
+        setInterval(loadHistoryData, 180000);
+    </script>
+</body>
+</html>

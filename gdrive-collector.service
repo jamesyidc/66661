@@ -1,0 +1,16 @@
+[Unit]
+Description=Google Drive Cryptocurrency Data Collector
+After=network.target
+
+[Service]
+Type=simple
+User=user
+WorkingDirectory=/home/user/webapp
+ExecStart=/usr/bin/python3 /home/user/webapp/auto_gdrive_collector_v2.py
+Restart=always
+RestartSec=30
+StandardOutput=append:/home/user/webapp/logs/collector.log
+StandardError=append:/home/user/webapp/logs/collector_error.log
+
+[Install]
+WantedBy=multi-user.target

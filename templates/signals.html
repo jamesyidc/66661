@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交易信号监控 - 做多做空信号追踪</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            color: #fff;
+        }
+        
+        .home-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .home-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.5);
+        }
+        
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(42, 45, 71, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value.long {
+            color: #10b981;
+        }
+        
+        .stat-value.short {
+            color: #ef4444;
+        }
+        
+        .stat-value.neutral {
+            color: #00d4ff;
+        }
+        
+        /* 图表容器 */
+        .chart-section {
+            background: rgba(42, 45, 71, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 1.5rem;
+            color: #fff;
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chart-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .chart-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .chart-btn.active {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+            border-color: transparent;
+        }
+        
+        #signalChart {
+            width: 100%;
+            height: 500px;
+        }
+        
+        /* 分页控制 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .page-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .page-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .page-info {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.95rem;
+        }
+        
+        /* 历史数据表格 */
+        .history-section {
+            background: rgba(42, 45, 71, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .history-table th {
+            background: rgba(0, 0, 0, 0.3);
+            color: #00d4ff;
+            font-weight: 600;
+        }
+        
+        .history-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .long-text {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .short-text {
+            color: #ef4444;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航 -->
+        <div class="top-nav">
+            <h1 class="page-title">📊 交易信号监控</h1>
+            <a href="/" class="home-btn">🏠 返回首页</a>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">最新做多信号</div>
+                <div class="stat-value long" id="latestLong">-</div>
+                <div class="stat-label" id="longRatio">占比: -</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">最新做空信号</div>
+                <div class="stat-value short" id="latestShort">-</div>
+                <div class="stat-label" id="shortRatio">占比: -</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">总信号数</div>
+                <div class="stat-value neutral" id="totalSignals">-</div>
+                <div class="stat-label" id="updateTime">更新时间: -</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">数据记录</div>
+                <div class="stat-value neutral" id="totalRecords">-</div>
+                <div class="stat-label">历史数据点</div>
+            </div>
+        </div>
+        
+        <!-- 图表区域 -->
+        <div class="chart-section">
+            <div class="chart-header">
+                <h2 class="chart-title">📈 信号趋势图 (12小时)</h2>
+                <div class="chart-controls">
+                    <button class="chart-btn" onclick="changeTimeRange('1h')">1小时</button>
+                    <button class="chart-btn" onclick="changeTimeRange('6h')">6小时</button>
+                    <button class="chart-btn active" onclick="changeTimeRange('12h')">12小时</button>
+                    <button class="chart-btn" onclick="changeTimeRange('24h')">24小时</button>
+                </div>
+            </div>
+            <div id="signalChart"></div>
+            <div class="pagination">
+                <button class="page-btn" id="prevPage" onclick="changePage(-1)">← 上一页</button>
+                <span class="page-info" id="pageInfo">第 1 页</span>
+                <button class="page-btn" id="nextPage" onclick="changePage(1)">下一页 →</button>
+            </div>
+        </div>
+        
+        <!-- 历史数据表格 -->
+        <div class="history-section">
+            <h2 class="chart-title">📋 历史记录 (最近50条)</h2>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>记录时间</th>
+                        <th>做多信号</th>
+                        <th>做空信号</th>
+                        <th>总信号</th>
+                        <th>做多占比</th>
+                        <th>做空占比</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                    <tr><td colspan="6">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        let chart = null;
+        let currentPage = 0;
+        let currentTimeRange = '12h';
+        
+        // 初始化图表
+        function initChart() {
+            chart = echarts.init(document.getElementById('signalChart'));
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    borderColor: '#00d4ff',
+                    textStyle: { color: '#fff' }
+                },
+                legend: {
+                    data: ['做多信号', '做空信号'],
+                    textStyle: { color: '#fff' },
+                    top: 10
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: 60,
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: [],
+                    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.3)' } },
+                    axisLabel: { color: 'rgba(255,255,255,0.7)' }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.3)' } },
+                    axisLabel: { color: 'rgba(255,255,255,0.7)' },
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+                },
+                series: [
+                    {
+                        name: '做多信号',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        itemStyle: { color: '#10b981' },
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
+                                    { offset: 1, color: 'rgba(16, 185, 129, 0.05)' }
+                                ]
+                            }
+                        },
+                        data: []
+                    },
+                    {
+                        name: '做空信号',
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        itemStyle: { color: '#ef4444' },
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: 'rgba(239, 68, 68, 0.3)' },
+                                    { offset: 1, color: 'rgba(239, 68, 68, 0.05)' }
+                                ]
+                            }
+                        },
+                        data: []
+                    }
+                ]
+            };
+            chart.setOption(option);
+        }
+        
+        // 加载数据
+        async function loadData() {
+            try {
+                // 加载图表数据
+                const chartResponse = await fetch(`/api/signals/chart?page=${currentPage}&range=${currentTimeRange}`);
+                const chartData = await chartResponse.json();
+                
+                if (chartData.success) {
+                    updateChart(chartData.data);
+                    updatePagination(chartData.page, chartData.total_pages);
+                }
+                
+                // 加载统计数据
+                const statsResponse = await fetch('/api/signals/stats');
+                const statsData = await statsResponse.json();
+                
+                if (statsData.success) {
+                    updateStats(statsData.data);
+                }
+                
+                // 加载历史记录
+                const historyResponse = await fetch('/api/signals/history?limit=50');
+                const historyData = await historyResponse.json();
+                
+                if (historyData.success) {
+                    updateHistory(historyData.data);
+                }
+                
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+        
+        // 更新图表
+        function updateChart(data) {
+            const times = data.map(d => d.time);
+            const longSignals = data.map(d => d.long_signals);
+            const shortSignals = data.map(d => d.short_signals);
+            
+            chart.setOption({
+                xAxis: { data: times },
+                series: [
+                    { data: longSignals },
+                    { data: shortSignals }
+                ]
+            });
+        }
+        
+        // 更新统计卡片
+        function updateStats(data) {
+            document.getElementById('latestLong').textContent = data.latest_long || 0;
+            document.getElementById('latestShort').textContent = data.latest_short || 0;
+            document.getElementById('totalSignals').textContent = data.latest_total || 0;
+            document.getElementById('totalRecords').textContent = data.total_records || 0;
+            document.getElementById('longRatio').textContent = `占比: ${data.long_ratio || 0}%`;
+            document.getElementById('shortRatio').textContent = `占比: ${data.short_ratio || 0}%`;
+            document.getElementById('updateTime').textContent = `更新: ${data.latest_time || '-'}`;
+        }
+        
+        // 更新历史记录表格
+        function updateHistory(data) {
+            const tbody = document.getElementById('historyBody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">暂无数据</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map(record => `
+                <tr>
+                    <td>${record.record_time}</td>
+                    <td class="long-text">${record.long_signals}</td>
+                    <td class="short-text">${record.short_signals}</td>
+                    <td>${record.total_signals}</td>
+                    <td class="long-text">${record.long_ratio}%</td>
+                    <td class="short-text">${record.short_ratio}%</td>
+                </tr>
+            `).join('');
+        }
+        
+        // 更新分页信息
+        function updatePagination(current, total) {
+            document.getElementById('pageInfo').textContent = `第 ${current + 1} / ${total} 页`;
+            document.getElementById('prevPage').disabled = current === 0;
+            document.getElementById('nextPage').disabled = current >= total - 1;
+        }
+        
+        // 翻页
+        function changePage(delta) {
+            currentPage += delta;
+            loadData();
+        }
+        
+        // 切换时间范围
+        function changeTimeRange(range) {
+            currentTimeRange = range;
+            currentPage = 0;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            loadData();
+        }
+        
+        // 初始化
+        window.onload = function() {
+            initChart();
+            loadData();
+            
+            // 每30秒刷新一次数据
+            setInterval(loadData, 30000);
+        };
+        
+        // 响应式图表
+        window.onresize = function() {
+            if (chart) {
+                chart.resize();
+            }
+        };
+    </script>
+</body>
+</html>

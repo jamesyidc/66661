@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星星系统 - 加密货币分析</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            color: rgba(255,255,255,0.7);
+            font-size: 1.1rem;
+        }
+        
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            text-decoration: none;
+            color: #fff;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* 汇总框 */
+        .summary-section {
+            margin-bottom: 30px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        
+        .summary-box {
+            background: linear-gradient(135deg, rgba(42, 45, 71, 0.95) 0%, rgba(32, 35, 61, 0.95) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+        
+        .summary-box.total {
+            border-color: rgba(0, 212, 255, 0.5);
+        }
+        
+        .summary-box.solid {
+            border-color: rgba(255, 215, 0, 0.6);
+            background: linear-gradient(135deg, rgba(80, 70, 20, 0.5) 0%, rgba(60, 50, 10, 0.5) 100%);
+        }
+        
+        .summary-box.hollow {
+            border-color: rgba(128, 128, 128, 0.6);
+            background: linear-gradient(135deg, rgba(50, 50, 50, 0.5) 0%, rgba(30, 30, 30, 0.5) 100%);
+        }
+        
+        .summary-value {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .summary-value.solid-color {
+            color: #FFD700;
+        }
+        
+        .summary-value.hollow-color {
+            color: #A9A9A9;
+        }
+        
+        .summary-value.total-color {
+            color: #00d4ff;
+        }
+        
+        .summary-label {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.8);
+            font-weight: 500;
+        }
+        
+        /* 指标框 */
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid #00d4ff;
+        }
+        
+        .indicators-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .indicator-box {
+            background: rgba(42, 45, 71, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        
+        .indicator-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+        
+        .indicator-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #00d4ff;
+        }
+        
+        .indicator-value {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 10px;
+        }
+        
+        .indicator-stars {
+            font-size: 2.5rem;
+            margin-top: 10px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .indicator-stars.solid {
+            color: #FFD700;
+        }
+        
+        .indicator-stars.hollow {
+            color: #A9A9A9;
+        }
+        
+        .indicator-stars.none {
+            color: rgba(255,255,255,0.3);
+        }
+        
+        .count-display {
+            margin-top: 10px;
+            min-height: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .update-time {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .error {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            color: #ef4444;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .indicators-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">← 返回首页</a>
+        
+        <div class="header">
+            <h1>⭐ 星星系统</h1>
+            <p>14项核心指标 · 实心星/空心星评分 · 实时更新</p>
+        </div>
+        
+        <div id="loading" class="loading">
+            加载中...
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+        </div>
+        
+        <div id="content" style="display: none;">
+            <!-- 汇总区域 -->
+            <div class="summary-section">
+                <h2 class="section-title">📊 星级汇总</h2>
+                <div class="summary-grid">
+                    <div class="summary-box total">
+                        <div class="summary-value total-color" id="total-stars">-</div>
+                        <div class="summary-label">总星数</div>
+                    </div>
+                    <div class="summary-box solid">
+                        <div class="summary-value solid-color" id="solid-stars">-</div>
+                        <div class="summary-label">实心星 ★</div>
+                    </div>
+                    <div class="summary-box hollow">
+                        <div class="summary-value hollow-color" id="hollow-stars">-</div>
+                        <div class="summary-label">空心星 ☆</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-value" style="color: #10b981;" id="solid-percentage">-</div>
+                        <div class="summary-label">实心星占比</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-value" style="color: #ef4444;" id="hollow-percentage">-</div>
+                        <div class="summary-label">空心星占比</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 指标区域 -->
+            <div class="indicators-section">
+                <h2 class="section-title">📈 评分指标</h2>
+                <div class="indicators-grid">
+                    <!-- 1. 急涨提醒 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">1. 急涨提醒</div>
+                        <div class="indicator-value">当前值: <span id="rush-up-value">-</span></div>
+                        <div class="indicator-value">阈值: ≥10(1★) / ≥50(2★) / ≥100(3★)</div>
+                        <div class="indicator-stars solid" id="rush-up-stars">---</div>
+                    </div>
+                    
+                    <!-- 2. 急跌系统 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">2. 急跌系统</div>
+                        <div class="indicator-value">当前值: <span id="rush-down-value">-</span></div>
+                        <div class="indicator-value">阈值: ≥10(1☆) / ≥50(2☆) / ≥100(3☆)</div>
+                        <div class="indicator-stars hollow" id="rush-down-stars">---</div>
+                    </div>
+                    
+                    <!-- 3. 差值正值 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">3. 急涨-急跌差值(正)</div>
+                        <div class="indicator-value">当前值: <span id="diff-pos-value">-</span></div>
+                        <div class="indicator-value">阈值: ≥10(1★) / ≥20(2★) / ≥50(3★)</div>
+                        <div class="indicator-stars solid" id="diff-pos-stars">---</div>
+                    </div>
+                    
+                    <!-- 4. 差值负值 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">4. 急涨-急跌差值(负)</div>
+                        <div class="indicator-value">当前值: <span id="diff-neg-value">-</span></div>
+                        <div class="indicator-value">阈值: ≤-10(1☆) / ≤-20(2☆) / ≤-50(3☆)</div>
+                        <div class="indicator-stars hollow" id="diff-neg-stars">---</div>
+                    </div>
+                    
+                    <!-- 5. 全网持仓量 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">5. 全网持仓量</div>
+                        <div class="indicator-value">当前值: <span id="holdings-value">-</span> 亿</div>
+                        <div class="indicator-value">阈值: ≤91(3★) / 91-95(2★) / 95-100(1★)</div>
+                        <div class="indicator-stars solid" id="holdings-stars">---</div>
+                    </div>
+                    
+                    <!-- 6. 做多信号 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">6. 做多信号</div>
+                        <div class="indicator-value">当前值: <span id="long-signals-value">-</span></div>
+                        <div class="indicator-value">阈值: 20-50(1★) / 50-100(2★) / ≥100(3★)</div>
+                        <div class="indicator-stars solid" id="long-signals-stars">---</div>
+                    </div>
+                    
+                    <!-- 7. 做空信号 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">7. 做空信号</div>
+                        <div class="indicator-value">当前值: <span id="short-signals-value">-</span></div>
+                        <div class="indicator-value">阈值: 30-50(1☆) / 50-120(2☆) / ≥120(3☆)</div>
+                        <div class="indicator-stars hollow" id="short-signals-stars">---</div>
+                    </div>
+                    
+                    <!-- 8. 只有急涨没有急跌 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">8. 只有急涨没有急跌</div>
+                        <div class="indicator-value">统计: 币种数量</div>
+                        <div class="count-display" id="only-rush-up">-</div>
+                    </div>
+                    
+                    <!-- 9. 急涨大于急跌 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">9. 急涨大于急跌</div>
+                        <div class="indicator-value">统计: 币种数量</div>
+                        <div class="count-display" id="rush-up-gt-down">-</div>
+                    </div>
+                    
+                    <!-- 10. 优先级≥4 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">10. 优先级≥4 (等级1-4)</div>
+                        <div class="indicator-value">统计: 币种数量</div>
+                        <div class="count-display" id="priority-high">-</div>
+                    </div>
+                    
+                    <!-- 11. 只有急跌 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">11. 只有急跌</div>
+                        <div class="indicator-value">统计: 币种数量</div>
+                        <div class="count-display" id="only-rush-down">-</div>
+                    </div>
+                    
+                    <!-- 12. 今天创新低记录 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">12. 今天创新低记录</div>
+                        <div class="indicator-value">当前值: <span id="new-low-value">-</span> 次</div>
+                        <div class="indicator-value">阈值: 1-3(1☆) / 3-10(2☆) / >10(3☆)</div>
+                        <div class="indicator-stars hollow" id="new-low-stars">---</div>
+                    </div>
+                    
+                    <!-- 13. 今天创新高记录 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">13. 今天创新高记录</div>
+                        <div class="indicator-value">当前值: <span id="new-high-value">-</span> 次</div>
+                        <div class="indicator-value">阈值: 1-3(1★) / 3-10(2★) / >10(3★)</div>
+                        <div class="indicator-stars solid" id="new-high-stars">---</div>
+                    </div>
+                    
+                    <!-- 14. 计次得分 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">14. 计次得分</div>
+                        <div class="indicator-value">当前值: <span id="count-value">-</span></div>
+                        <div class="indicator-value">动态阈值 (根据时间段)</div>
+                        <div class="indicator-stars" id="count-stars">---</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="update-time" id="update-time">
+                最后更新: -
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 加载星星系统数据
+        function loadStarSystemData() {
+            fetch('/api/star-system/data')
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success) {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('error').style.display = 'none';
+                        document.getElementById('content').style.display = 'block';
+                        
+                        const data = response.data;
+                        const rawData = response.raw_data;
+                        const summary = data.summary;
+                        
+                        // 更新汇总数据
+                        document.getElementById('total-stars').textContent = summary.total_stars;
+                        document.getElementById('solid-stars').textContent = summary.solid_stars;
+                        document.getElementById('hollow-stars').textContent = summary.hollow_stars;
+                        
+                        const solidPercentage = summary.total_stars > 0 
+                            ? Math.round(summary.solid_stars / summary.total_stars * 100) 
+                            : 0;
+                        const hollowPercentage = summary.total_stars > 0 
+                            ? Math.round(summary.hollow_stars / summary.total_stars * 100) 
+                            : 0;
+                        
+                        document.getElementById('solid-percentage').textContent = solidPercentage + '%';
+                        document.getElementById('hollow-percentage').textContent = hollowPercentage + '%';
+                        
+                        // 更新各项指标
+                        // 1. 急涨提醒
+                        document.getElementById('rush-up-value').textContent = rawData.rush_up;
+                        document.getElementById('rush-up-stars').textContent = data.rush_up.display;
+                        
+                        // 2. 急跌系统
+                        document.getElementById('rush-down-value').textContent = rawData.rush_down;
+                        document.getElementById('rush-down-stars').textContent = data.rush_down.display;
+                        
+                        // 3. 差值正值
+                        const diffValue = rawData.diff;
+                        document.getElementById('diff-pos-value').textContent = diffValue >= 0 ? diffValue : '不适用';
+                        document.getElementById('diff-pos-stars').textContent = data.diff_positive.display;
+                        
+                        // 4. 差值负值
+                        document.getElementById('diff-neg-value').textContent = diffValue < 0 ? diffValue : '不适用';
+                        document.getElementById('diff-neg-stars').textContent = data.diff_negative.display;
+                        
+                        // 5. 全网持仓量
+                        document.getElementById('holdings-value').textContent = rawData.holdings.toFixed(2);
+                        document.getElementById('holdings-stars').textContent = data.holdings.display;
+                        
+                        // 6. 做多信号
+                        document.getElementById('long-signals-value').textContent = rawData.long_signals;
+                        document.getElementById('long-signals-stars').textContent = data.long_signals.display;
+                        
+                        // 7. 做空信号
+                        document.getElementById('short-signals-value').textContent = rawData.short_signals;
+                        document.getElementById('short-signals-stars').textContent = data.short_signals.display;
+                        
+                        // 8-11. 统计数据 - 显示具体币种
+                        const coinLists = response.coin_lists || {};
+                        
+                        // 8. 只有急涨没有急跌
+                        const onlyRushUpCoins = coinLists.only_rush_up_coins || [];
+                        document.getElementById('only-rush-up').innerHTML = 
+                            onlyRushUpCoins.length > 0 
+                            ? `<div style="font-size: 2rem; font-weight: bold; color: #00d4ff; margin-bottom: 10px;">${onlyRushUpCoins.length}个币种</div>
+                               <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">${onlyRushUpCoins.join(', ')}</div>`
+                            : '<div style="font-size: 1.5rem; color: rgba(255,255,255,0.5);">无</div>';
+                        
+                        // 9. 急涨大于急跌
+                        const rushUpGtDownCoins = coinLists.rush_up_gt_down_coins || [];
+                        document.getElementById('rush-up-gt-down').innerHTML = 
+                            rushUpGtDownCoins.length > 0 
+                            ? `<div style="font-size: 2rem; font-weight: bold; color: #00d4ff; margin-bottom: 10px;">${rushUpGtDownCoins.length}个币种</div>
+                               <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">${rushUpGtDownCoins.join(', ')}</div>`
+                            : '<div style="font-size: 1.5rem; color: rgba(255,255,255,0.5);">无</div>';
+                        
+                        // 10. 优先级≥4
+                        const priorityHighCoins = coinLists.priority_high_coins || [];
+                        document.getElementById('priority-high').innerHTML = 
+                            priorityHighCoins.length > 0 
+                            ? `<div style="font-size: 2rem; font-weight: bold; color: #00d4ff; margin-bottom: 10px;">${priorityHighCoins.length}个币种</div>
+                               <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">${priorityHighCoins.join(', ')}</div>`
+                            : '<div style="font-size: 1.5rem; color: rgba(255,255,255,0.5);">无</div>';
+                        
+                        // 11. 只有急跌
+                        const onlyRushDownCoins = coinLists.only_rush_down_coins || [];
+                        document.getElementById('only-rush-down').innerHTML = 
+                            onlyRushDownCoins.length > 0 
+                            ? `<div style="font-size: 2rem; font-weight: bold; color: #00d4ff; margin-bottom: 10px;">${onlyRushDownCoins.length}个币种</div>
+                               <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">${onlyRushDownCoins.join(', ')}</div>`
+                            : '<div style="font-size: 1.5rem; color: rgba(255,255,255,0.5);">无</div>';
+                        
+                        // 12. 今天创新低
+                        document.getElementById('new-low-value').textContent = rawData.new_low_today;
+                        document.getElementById('new-low-stars').textContent = data.new_low_today.display;
+                        
+                        // 13. 今天创新高
+                        document.getElementById('new-high-value').textContent = rawData.new_high_today;
+                        document.getElementById('new-high-stars').textContent = data.new_high_today.display;
+                        
+                        // 14. 计次得分
+                        document.getElementById('count-value').textContent = rawData.count;
+                        const countStarsEl = document.getElementById('count-stars');
+                        countStarsEl.textContent = data.count_score.display;
+                        countStarsEl.className = 'indicator-stars ' + (data.count_score.type === '实心' ? 'solid' : data.count_score.type === '空心' ? 'hollow' : 'none');
+                        
+                        // 更新时间
+                        document.getElementById('update-time').textContent = '最后更新: ' + response.update_time;
+                    } else {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('error').style.display = 'block';
+                        document.getElementById('error').textContent = '加载失败: ' + (response.error || '未知错误');
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('error').textContent = '网络错误: ' + err.message;
+                    console.error('加载星星系统数据失败:', err);
+                });
+        }
+        
+        // 首次加载
+        loadStarSystemData();
+        
+        // 每30秒自动刷新
+        setInterval(loadStarSystemData, 30000);
+    </script>
+</body>
+</html>

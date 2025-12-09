@@ -1,0 +1,562 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>比特币爆仓数据_比特币合约爆仓统计_今日比特币全网爆仓实时数据</title>
+<meta name="keywords" content="比特币爆仓数据,比特币合约爆仓统计,比特币全网爆仓,今日比特币爆仓实时数据" />
+<meta name="description" content="提供比特币爆仓数据,比特币合约爆仓统计,今日比特币实时爆仓数据.BTC全网爆仓数据来自欧易OKX、火必网、币安网、BitMex交易所,供您投资参考." />
+<meta name="renderer" content="webkit" />
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<script src="/js/jquery.min.js"></script>
+<script src="/js/echarts.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/layui/css/layui.css" />
+<link rel="stylesheet" type="text/css" href="/css/style.css" />
+<script src="/js/vue.min.js"></script>
+<script src="/js/axios.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="/js/html5.min.js"></script>
+      <script src="/js/respond.min.js"></script>
+    <![endif]-->
+<style type="text/css">
+* {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+  .usdt{font-size: 24px;font-weight: 600;color: #334A6B; line-height: 33px;text-align: center;}
+  .cny{font-size: 14px; font-weight: 400; color: #334A6B; line-height: 20px;text-align: center;}
+  table img{width:15px;height:15px;}
+  .layui-table th{text-align:left;}
+  .layui-table td{font-size:12px;}
+  .layui-card-header{text-align:center;}
+  .xiaozi{font-size:0.7rem;color: #334A6B;}
+  
+    .tab_menu li.current {
+        background: #4b7efd;
+        color: #fff;
+    }
+    .tab_menu li {
+        float: left;
+        width: 28px;
+        height: 28px;
+        line-height: 28px;
+        display: inline-block;
+        margin: 6px 0 0 12px;
+        background: #ebf0fc;
+        color: #666;
+        text-align: center;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: .6rem;
+    }
+  .kuang{
+        width:98%;
+        height: 81px;
+        border: 1px solid #6f95eb;
+        border-radius: 8px;
+        margin: 8px 0 0 1%;
+        padding-left:5px;
+        position: relative;
+        background-position:right -5% bottom -88%!important;
+        background-size:18%!important;
+    }
+  @media screen and (max-width: 760px){
+      .kuang{
+            width:90%;
+            margin:8px auto;
+            background-position:right -5% bottom!important;
+            background-size:20%!important;
+      }
+  }
+.topad{display:none;}
+.dhaaa a{color:#fff}
+.dhaaa a:hover{color:#FF5722}
+</style>
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+    <div class="header header-index" winter>
+	<div class="layui-main header-width"><a class="logo" href="/"><img src="/css/logo.png" alt="比特币历史价格"></a>
+    	<ul class="layui-nav">
+    	    <li class="layui-nav-item layui-hide-xs"><a href="/">首页</a></li>
+    	    <li class="layui-nav-item layui-hide-xs"><a href="https://alpha.btc126.com/" target="_blank">币安Alpha</a></li>
+    		<li class="layui-nav-item layui-hide-xs"><a href="javascript:;">历史</a>
+    		    <dl class="layui-nav-child">
+    		        <dd><a href="https://history.btc123.fans/">比特币历史</a></dd>
+    		        <dd><a href="https://history.btc123.fans/eth/">以太坊历史</a></dd>
+    		        <dd><a href="https://history.btc123.fans/bnb/">币安币历史</a></dd>
+    		        <dd><a href="https://history.btc123.fans/ltc/">莱特币历史</a></dd>
+    		    </dl>
+    		</li>
+    		<li class="layui-nav-item layui-hide-xs"><a href="javascript:;">行情</a>
+    		    <dl class="layui-nav-child">
+    		        <dd><a href="https://price.btc123.fans/">最新价格</a></dd>
+    		        <dd><a href="https://price.btc123.fans/rise/desc/">涨幅榜</a></dd>
+    		        <dd><a href="https://price.btc123.fans/rise/asc/">跌幅榜</a></dd>
+    		        <dd><a href="https://price.btc123.fans/new/">新币榜</a></dd>
+    		        <dd><a href="https://history.btc123.fans/richer/">富豪榜</a></dd>
+    		        <dd><a href="https://history.btc123.fans/usdt/">USDT溢价</a></dd>
+    		        <dd><a href="https://history.btc123.fans/half/">减半时间</a></dd>
+    		    </dl>
+    		</li>
+    		<li class="layui-nav-item layui-hide-xs"><a href="javascript:;">板块</a>
+    		    <dl class="layui-nav-child">
+    		        <dd><a href="https://price.btc123.fans/plates/wendingbi/">稳定币</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/half/">减半概念</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/hk/">香港概念</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/meme/">Meme概念</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/ai/">Ai人工智能</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/inscriptions/">铭文代币</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/gamefi/">游戏代币</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/brc20/">BRC20概念</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/layer1/">layer1概念</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/layer2/">layer2概念</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/storage/">分布式存储</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/ethup/">以太坊升级</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/pingtai/">交易所平台币</a></dd>
+    		        <dd><a href="https://price.btc123.fans/plates/binancelabs/">币安投资概念</a></dd>
+    		    </dl>
+    		</li>
+    		<li class="layui-nav-item layui-hide-xs"><a href="javascript:;">数据</a>
+    		    <dl class="layui-nav-child">
+    				<dd><a href="https://history.btc123.fans/baocang/">爆仓数据</a></dd>
+    				<dd><a href="https://history.btc123.fans/taoding/">逃顶指标</a></dd>
+    				<dd><a href="https://history.btc123.fans/paomo/">泡沫指标</a></dd>
+    				<dd><a href="https://history.btc123.fans/ahr999/">Ahr999屯币指标</a></dd>
+    				<dd><a href="https://history.btc123.fans/zhishu/">恐惧贪婪指数</a></dd>
+    		        <dd><a href="https://history.btc123.fans/kuangji/">矿机收益</a></dd>
+    		        <dd><a href="https://history.btc123.fans/difficulty/">挖矿难度</a></dd>
+    		        <dd><a href="https://history.btc123.fans/hashrate/">全网算力</a></dd>
+    		        <dd><a href="https://history.btc123.fans/pools/">矿池排名</a></dd>
+    				<dd><a href="https://history.btc123.fans/browser/">区块链浏览器</a></dd>
+    				<dd><a href="https://history.btc123.fans/exchanges/">交易所比特币余额</a></dd>
+    		    </dl>
+    		</li>
+    		
+    		<li class="layui-nav-item layui-hide-md"><a href="javascript:;">更多</a>
+    			<dl class="layui-nav-child nav-child-me">
+    				<dd><a href="https://price.btc123.fans/">行情</a></dd>
+    				<dd><a href="https://history.btc123.fans/">历史</a></dd>
+    				<dd><a href="https://history.btc123.fans/zhishu/">恐贪</a></dd>
+    				<dd><a href="https://history.btc123.fans/baocang/">爆仓</a></dd>
+    				<dd><a href="https://history.btc123.fans/usdt/">USDT</a></dd>
+    				<dd><a href="https://price.btc123.fans/rise/desc/">涨幅榜</a></dd>
+    				<dd><a href="https://price.btc123.fans/new/">新币榜</a></dd>
+    				<dd><a href="https://price.btc123.fans/plates/pingtai/">平台币</a></dd>
+    			</dl>
+    		</li>
+    	</ul>
+	</div>
+</div>
+</div>
+
+<div class="layui-container" style="margin:10px auto">
+    <div class="layui-row layui-col-space10" id="main" v-if="sites.totalBlastUsd1h" v-cloak>
+        <div class="layui-col-xs6 layui-col-md4">
+          <div class="layui-card">
+            <div class="layui-card-header"><span class="layui-btn layui-btn-sm layui-btn-danger">1小时爆仓</span></div>
+            <div class="layui-card-body" style="text-align:center;">
+                <span class="usdt">${{sites.totalBlastUsd1h|numFilter2}}</span><br />
+                <span class="cny">≈ {{sites.totalBlastCny1h|numFilter2}}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="layui-col-xs6 layui-col-md4">
+          <div class="layui-card">
+            <div class="layui-card-header"><span class="layui-btn layui-btn-sm layui-btn-normal">24小时爆仓</span></div>
+            <div class="layui-card-body" style="text-align:center;">
+                <span class="usdt">${{sites.totalBlastUsd24h|numFilter2}}</span><br />
+                <span class="cny">≈ ¥{{sites.totalBlastCny24h|numFilter2}}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="layui-col-xs12 layui-col-md4">
+          <div class="layui-card">
+            <div class="layui-card-header"><span class="layui-btn layui-btn-sm layui-btn-warm">24H爆仓人数</span></div>
+            <div class="layui-card-body">
+				<span style="line-height:33px;"><i class="layui-icon layui-icon-user" style="font-size:13px;color: #FF5722;"></i> 最近24小时，共有<font color="#1E9FFF">{{sites.totalBlastNum24h}}</font>人爆仓</span><br />
+				<span style="line-height:20px;"><i class="layui-icon layui-icon-face-cry" style="font-size:13px;color: #FF5722;"></i> 最大单笔爆仓单发生在<font color="#1E9FFF">{{sites.maxExchange}}-{{sites.maxCoin}}</font>价值<font color="#1E9FFF">${{sites.maxCount|numFilter}}</font></span>
+            </div>
+          </div>
+        </div>
+
+        <!--各币种爆仓数据-->
+        <div class="layui-row" style="background:#fff;">
+            <div class="layui-bg-black" style="padding:0 1%;height:40px;line-height:40px;">
+                <div class="dhaaa" style="float:left;"><a href="/heyue/" target="_blank">各币种爆仓统计</a></div>
+                <div style="float:right" class="tab_menu">
+        			<li type_name="1h" class="coin-type1h" @click="getData('1hbaocang')">1H</li>
+                    <li type_name="4h" class="coin-type4h" @click="getData('4hbaocang')">4H</li>
+                    <li type_name="24h" class="coin-type24h" @click="getData('24hbaocang')">24H</li>
+                </div>
+            </div>
+            <div class="layui-col-xs4 layui-col-md4" v-for="item in sites.coinsDataList">
+              <div class="layui-card kuang" :style="'background:url('+item.icon+') no-repeat;'">
+                <div class="layui-card-body" >
+    				{{item.coin}}<br /><b>${{item.totalBlast|numFilter2}}</b><br /><span class="xiaozi">≈ {{item.totalBlastAboutCount|numFilter}}个{{item.coin}}</span>
+                </div>
+              </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="layui-container">
+    <div class="layui-row layui-col-space10">
+        <div class="layui-col-md6" id="main24" v-cloak>
+            <div class="layui-card">
+            <div class="layui-card-header" style="text-align:center"><h3>24H全网爆仓统计</h3></div>
+                <div class="layui-card-body">
+                	<li align="center">合约/杠杆有风险，交易需谨慎！</li>
+                	<table class="layui-table">
+					  <colgroup>
+					    <col>
+					    <col>
+					    <col>
+					  </colgroup>
+					  <thead>
+					    <tr>
+					      <th>交易所</th>
+					      <th>金额</th>
+					      <th>占比</th>
+					    </tr> 
+					  </thead>
+					  <tbody>
+					    <tr v-for="item in sites.exchangesDataList">
+					      <td><img :src=item.imgUrl /> {{item.exchange}}</td>
+					      <td>${{item.totalBlast|numFilter}}</td>
+					      <td>{{item.totalBlastRate|numPercent}}</td>
+					    </tr>
+					  </tbody>
+					</table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="layui-col-md6" id="mainrealhold" v-cloak>
+            <div class="layui-card">
+            <div class="layui-card-header" style="text-align:center"><h3>全网实盘持仓量</h3></div>
+                <div class="layui-card-body">
+                	<li align="center">合约/杠杆有风险，交易需谨慎！</li>
+                	<table class="layui-table">
+					  <thead>
+					    <tr>
+					      <th>交易所</th>
+					      <th>持仓量</th>
+					      <th>24H变化</th>
+					    </tr> 
+					  </thead>
+					  <tbody>
+					    <tr v-for="item in sites" v-if="item.exchangeOtherName!=='BitCoke'">
+					      <td><img :src="'/img/exchanges/'+ (item.exchangeOtherName.toLowerCase()).trim() + '.png'"> {{item.exchange}}</td>
+					      <td>${{item.amount|numFilter}}</td>
+					      <td>{{item.dayChanges|numPercent}}</td>
+					    </tr>
+					  </tbody>
+					</table>
+                </div>
+            </div>
+        </div>
+		
+        <div class="layui-col-md12">
+            <div class="layui-card">
+            <div class="layui-card-header"><h3>比特币合约交易平台推荐</h3></div>
+                <div class="layui-card-body">
+                    <div class="layui-btn-container" style="text-align:center">                         
+                        <center>
+<a href="https://go.btc126.vip/ok.php" target="_blank" class="layui-btn layui-btn-sm">欧易OKX</a>
+<a href="https://go.btc126.vip/bian.php" target="_blank" class="layui-btn layui-btn-sm layui-btn-danger">币安Binance</a>
+<a href="https://go.btc126.vip/htx.php" target="_blank" class="layui-btn layui-btn-sm layui-btn-normal">火币HTX</a>
+</center>                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="layui-col-md12">
+			<script src="/js/top.js"></script>
+        </div>
+    </div>
+</div>
+
+<div class="layui-container">
+    <div class="layui-card">
+      	<div class="layui-card-header" style="text-align:center;"><h3>30日爆仓数据日历</h3></div>
+        <div id="main30" v-cloak>
+        	<div class="layui-card-body">
+            	<li align="center">全网爆仓金额: {{sites.totalAmount|numFilter}} 多空爆仓比例: {{sites.totalRate|numFilter}}</li>
+            	<table class="layui-table">
+				  <colgroup>
+				    <col>
+				    <col>
+				    <col>
+				  </colgroup>
+				  <thead>
+				    <tr>
+				      <th>日期</th>
+				      <th>多单爆仓</th>
+				      <th>空单爆仓</th>
+				    </tr> 
+				  </thead>
+				  <tbody>
+				    <tr v-for="item in sites.list">
+				      <td>{{item.dateStr}}</td>
+				      <td>${{item.sellAmount|numFilter}}</td>
+				      <td>${{item.buyAmount|numFilter}}</td>
+				    </tr>
+				  </tbody>
+				</table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    new Vue({
+        el: '#main',
+        data: {
+            sites: []
+        },
+        methods: {
+			getData(symbol){
+			    if(!symbol){symbol='24hbaocang';$('.coin-type24h').addClass('current');}
+			    if(symbol=='1hbaocang'){symbol='1hbaocang';$('.coin-type1h').addClass('current');$('.coin-type4h').removeClass('current');$('.coin-type24h').removeClass('current');}
+			    if(symbol=='4hbaocang'){symbol='4hbaocang';$('.coin-type4h').addClass('current');$('.coin-type24h').removeClass('current');$('.coin-type1h').removeClass('current');}
+			    if(symbol=='24hbaocang'){symbol='24hbaocang';$('.coin-type24h').addClass('current');$('.coin-type1h').removeClass('current');$('.coin-type4h').removeClass('current');}
+			    
+                axios.get('https://api.btc123.fans/bicoin.php?from='+symbol+'&t='+Math.random())
+				.then((res)=> {
+				    //console.log(res.data.data[0]);
+				    this.sites = res.data.data;
+				    this.symbol = symbol;
+				})
+				.catch(error=> {console.log(error);})
+        	}
+        },
+        created(){this.getData()},
+		filters: {
+		  numFilter(value){//保留小数点后两位
+		    let realVal = ''
+		    realVal = parseFloat(value);
+			if(realVal>100000000){return (realVal/100000000).toFixed(2)+'亿';}
+			if(realVal>10000){return (realVal/10000).toFixed(0)+'万';}
+			else{return realVal;}
+		  },
+		  numFilter2(value){
+			let realVal = ''
+			realVal = parseFloat(value);
+			if(realVal>100000000){return (realVal/100000000).toFixed(2)+'亿';}
+			if(realVal>10000){return (realVal/10000).toFixed(2)+'万';}
+			else{return realVal.toFixed(2);}
+			},
+		  numPercent(value){
+			let realVal = ''
+			realVal = (parseFloat(value)*100).toFixed(2);
+			return realVal+'%';
+			},
+		  numPercent2(value){
+			let realVal = ''
+			realVal = (parseFloat(value)*100).toFixed(2);
+			return realVal;
+			},
+		  
+		 },
+	     mounted() {
+		  if (this.timer){
+		    clearInterval(this.timer)
+		  } else {
+		    this.timer = setInterval(() => {
+		        symbol = this.symbol;
+                this.getData(symbol)
+		    }, 16000)
+		  }
+		},
+		destroyed(){
+		  clearInterval(this.timer)
+		},
+    })
+</script>
+
+<script>
+    new Vue({
+        el: '#main24',
+        data: {
+            sites: []
+        },
+		created(){this.getData()},
+        methods: {
+			getData(){
+            var self = this;
+            axios.get('https://api.btc123.fans/bicoin.php?from=24hbaocang&t='+Math.random())
+				.then((res)=> {
+				    this.sites = res.data.data;
+				    //console.log(res.data.data)
+				})
+				.catch(error=> {console.log(error);})
+        	}
+        },
+		filters: {
+		  numFilter(value){//保留小数点后两位
+		    let realVal = ''
+		    realVal = parseFloat(value);
+			if(realVal>100000000){return (realVal/100000000).toFixed(2)+'亿';}
+			if(realVal>10000){return (realVal/10000).toFixed(0)+'万';}
+			else{return realVal;}
+		  },
+		  numFilter2(value){
+			let realVal = ''
+			realVal = parseFloat(value);
+			if(realVal>100000000){return (realVal/100000000).toFixed(2)+'亿';}
+			if(realVal>10000){return (realVal/10000).toFixed(2)+'万';}
+			else{return realVal;}
+			},
+		  numPercent(value){
+			let realVal = ''
+			realVal = (parseFloat(value)*100).toFixed(2);
+			return realVal+'%';
+			},
+		  numPercent2(value){
+			let realVal = ''
+			realVal = (parseFloat(value)*100).toFixed(2);
+			return realVal;
+			},
+		  
+		 },
+	     mounted() {
+		  if (this.timer){
+		    clearInterval(this.timer)
+		  } else {
+		    this.timer = setInterval(() => {
+		      this.getData()
+		    }, 30000)
+		  }
+		},
+		destroyed(){
+		  clearInterval(this.timer)
+		},
+    })
+</script>
+
+<script>
+    new Vue({
+        el: '#mainrealhold',
+        data: {
+            sites: []
+        },
+		created(){this.getData()},
+        methods: {
+			getData(){
+            axios.get('https://api.btc123.fans/bicoin.php?from=realhold&t='+Math.random())
+				.then((res)=> {
+				    this.sites = res.data.data
+				})
+				.catch(error=> {console.log(error);})
+        	}
+        },
+		filters: {
+		  numFilter(value){
+		    let realVal = ''
+		    realVal = parseFloat(value);
+			if(realVal>100000000){return (realVal/100000000).toFixed(2)+'亿';}
+			if(realVal>10000){return (realVal/10000).toFixed(0)+'万';}
+			else{return realVal;}
+		  },
+		  numFilter2(value){
+			let realVal = ''
+			realVal = parseFloat(value);
+			if(realVal>100000000){return (realVal/100000000).toFixed(2)+'亿';}
+			if(realVal>10000){return (realVal/10000).toFixed(2)+'万';}
+			else{return realVal;}
+			},
+		  numPercent(value){
+			let realVal = ''
+			realVal = (parseFloat(value)*100).toFixed(2);
+			return realVal+'%';
+			},
+		  numPercent2(value){
+			let realVal = ''
+			realVal = (parseFloat(value)*100).toFixed(2);
+			return realVal;
+			},
+		  
+		 },
+	     mounted() {
+		  if (this.timer){
+		    clearInterval(this.timer)
+		  } else {
+		    this.timer = setInterval(() => {
+		      this.getData()
+		    }, 80000)
+		  }
+		},
+		destroyed(){
+		  clearInterval(this.timer)
+		},
+    })
+</script>
+
+<script>
+    new Vue({
+        el: '#main30',
+        data: {
+            sites: []
+        },
+		created(){this.getData()},
+        methods: {
+			getData(){
+            axios.get('https://api.btc123.fans/bicoin.php?from=30daybaocang&t='+Math.random())
+				.then((res)=> {
+				    this.sites = res.data.data
+				})
+				.catch(error=> {console.log(error);})
+        	}
+        },
+		filters: {
+		  numFilter(value){
+		    let realVal = ''
+		    realVal = parseFloat(value);
+			if(realVal>100000000){return (realVal/100000000).toFixed(2)+'亿';}
+			if(realVal>10000){return (realVal/10000).toFixed(0)+'万';}
+			else{return realVal.toFixed(2);}
+		  }
+		 },
+	     mounted() {
+		  if (this.timer){
+		    clearInterval(this.timer)
+		  } else {
+		    this.timer = setInterval(() => {
+		      this.getData()
+		    }, 1800000)
+		  }
+		},
+		destroyed(){
+		  clearInterval(this.timer)
+		},
+    })
+</script>
+
+<div class="footer layui-bg-cyan">
+    「比特币爆仓数据查询」<br />
+    比特币合约爆仓实时数据统计仅供参考。<br />
+    © 2025 <a href="https://history.btc123.fans/">历史币价</a>  HISTORY.BTC123.FANS
+</div>
+
+
+<script src="/layui/layui.js"></script>
+<script>
+layui.use('element', function(){
+  var element = layui.element;
+  element.on('nav(demo)', function(elem){
+    layer.msg(elem.text());
+  });
+});
+</script>
+
+<div style="display:none;"><script src="/js/tj.js"></script></div>
+
+</body>
+</html>

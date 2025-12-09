@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手动上传数据 - 加密货币监控系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .upload-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #00ff00;
+            background: #e8ffe8;
+        }
+        
+        .upload-icon {
+            font-size: 60px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .upload-hint {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f0f2ff;
+            color: #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e4ff;
+        }
+        
+        .file-info {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .file-info.show {
+            display: block;
+        }
+        
+        .file-name {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .file-size {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .message.show {
+            display: block;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .data-preview {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .data-preview.show {
+            display: block;
+        }
+        
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e4ff;
+        }
+        
+        .data-item:last-child {
+            border-bottom: none;
+        }
+        
+        .data-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .data-value {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .link-group {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .link-group a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .link-group a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-container">
+        <h1>📤 手动上传数据</h1>
+        <p class="subtitle">将最新的 .txt 数据文件拖拽到下方区域，或点击选择文件</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">点击或拖拽文件到此处</div>
+            <div class="upload-hint">支持 .txt 文件格式</div>
+        </div>
+        
+        <input type="file" id="fileInput" accept=".txt">
+        
+        <div class="file-info" id="fileInfo">
+            <div class="file-name" id="fileName"></div>
+            <div class="file-size" id="fileSize"></div>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn btn-primary" id="uploadBtn" disabled>上传并更新数据</button>
+            <button class="btn btn-secondary" id="clearBtn">清除选择</button>
+        </div>
+        
+        <div class="message" id="message"></div>
+        
+        <div class="data-preview" id="dataPreview"></div>
+        
+        <div class="link-group">
+            <a href="/">← 返回首页</a>
+            <a href="/live-data">实时监控</a>
+            <a href="/trend-chart">趋势图表</a>
+        </div>
+    </div>
+    
+    <script>
+        let selectedFile = null;
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const message = document.getElementById('message');
+        const dataPreview = document.getElementById('dataPreview');
+        
+        // 点击上传区域
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // 文件选择
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+        
+        // 拖拽上传
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+        
+        // 处理文件
+        function handleFile(file) {
+            if (!file) return;
+            
+            if (!file.name.endsWith('.txt')) {
+                showMessage('请选择 .txt 格式的文件', 'error');
+                return;
+            }
+            
+            selectedFile = file;
+            fileName.textContent = `📄 ${file.name}`;
+            fileSize.textContent = `大小: ${(file.size / 1024).toFixed(2)} KB`;
+            fileInfo.classList.add('show');
+            uploadBtn.disabled = false;
+            hideMessage();
+            
+            // 预览文件内容
+            previewFile(file);
+        }
+        
+        // 预览文件
+        function previewFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                parseAndPreview(content);
+            };
+            reader.readAsText(file, 'GBK');
+        }
+        
+        // 解析并预览数据
+        function parseAndPreview(content) {
+            const lines = content.split('\n');
+            const previewData = {};
+            
+            lines.forEach(line => {
+                if (line.includes('透明标签_急涨总和')) {
+                    const match = line.match(/急涨：(\d+)/);
+                    if (match) previewData['急涨'] = match[1];
+                }
+                if (line.includes('透明标签_急跌总和')) {
+                    const match = line.match(/急跌：(\d+)/);
+                    if (match) previewData['急跌'] = match[1];
+                }
+                if (line.includes('透明标签_五种状态')) {
+                    const match = line.match(/状态：([^\s]+)/);
+                    if (match) previewData['状态'] = match[1];
+                }
+                if (line.includes('透明标签_急涨急跌比值')) {
+                    const match = line.match(/比值：([\d.]+)/);
+                    if (match) previewData['比值'] = match[1];
+                }
+                if (line.includes('透明标签_差值结果')) {
+                    const match = line.match(/差值：([-\d.]+)/);
+                    if (match) previewData['差值'] = match[1];
+                }
+                if (line.includes('透明标签_计次')) {
+                    const match = line.match(/=(\d+)/);
+                    if (match) previewData['计次'] = match[1];
+                }
+            });
+            
+            if (Object.keys(previewData).length > 0) {
+                let html = '<h3 style="margin-bottom: 15px; color: #333;">数据预览</h3>';
+                for (const [key, value] of Object.entries(previewData)) {
+                    html += `
+                        <div class="data-item">
+                            <span class="data-label">${key}</span>
+                            <span class="data-value">${value}</span>
+                        </div>
+                    `;
+                }
+                dataPreview.innerHTML = html;
+                dataPreview.classList.add('show');
+            }
+        }
+        
+        // 上传文件
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '上传中...';
+            
+            try {
+                const response = await fetch('/api/upload-data', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(`✅ ${result.message}`, 'success');
+                    setTimeout(() => {
+                        window.location.href = '/live-data';
+                    }, 2000);
+                } else {
+                    showMessage(`❌ ${result.message}`, 'error');
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = '上传并更新数据';
+                }
+            } catch (error) {
+                showMessage(`❌ 上传失败: ${error.message}`, 'error');
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '上传并更新数据';
+            }
+        });
+        
+        // 清除选择
+        clearBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.classList.remove('show');
+            dataPreview.classList.remove('show');
+            uploadBtn.disabled = true;
+            hideMessage();
+        });
+        
+        // 显示消息
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = `message show ${type}`;
+        }
+        
+        // 隐藏消息
+        function hideMessage() {
+            message.classList.remove('show');
+        }
+    </script>
+</body>
+</html>

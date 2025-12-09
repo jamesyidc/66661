@@ -1,0 +1,69 @@
+# Google Service Account credentials
+credentials.json
+*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database files
+*.db
+*.db-wal
+*.db-shm
+
+# Process ID files
+*.pid
+
+# Temporary files
+temp_download/
+*.png
+*.txt
+!requirements.txt
+!REDEPLOYMENT_SUCCESS.md
+
+# Historical data directories
+2025-*/
+old_panic_files/

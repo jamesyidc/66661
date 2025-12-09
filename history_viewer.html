@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密货币数据历史回看</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a9eff;
+            margin: 0;
+        }
+
+        .back-button {
+            position: absolute;
+            left: 0;
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-button:hover {
+            background: #3a8eef;
+            transform: translateX(-5px);
+        }
+
+        .back-button:active {
+            transform: translateX(-5px) scale(0.95);
+        }
+
+        .control-panel {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            color: #888;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        input[type="date"],
+        input[type="time"],
+        select,
+        button {
+            padding: 8px 12px;
+            border: 1px solid #2a2a3e;
+            border-radius: 4px;
+            background: #0f1419;
+            color: #eee;
+            font-size: 14px;
+        }
+
+        button {
+            background: #4a9eff;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #3a8eef;
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .stats-bar {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .stat-value.up {
+            color: #00ff88;
+        }
+
+        .stat-value.down {
+            color: #ff4444;
+        }
+
+        .timeline {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .timeline-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .timeline-item {
+            background: #0f1419;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-left: 4px solid #4a9eff;
+        }
+
+        .timeline-item:hover {
+            background: #1e2838;
+        }
+
+        .timeline-item.active {
+            background: #2a3848;
+            border-left-color: #00ff88;
+        }
+
+        .timeline-time {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4a9eff;
+            margin-bottom: 5px;
+        }
+
+        .timeline-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        /* 高亮标注样式 */
+        .timeline-item.highlight-extreme {
+            background: #4d1f1f !important;
+            border-left-color: #ff0000 !important;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        }
+
+        .timeline-item.highlight-strong {
+            background: #3d2f1f !important;
+            border-left-color: #ff9900 !important;
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.4);
+        }
+
+        .timeline-item.highlight-special {
+            background: #1f2d3d !important;
+            border-left-color: #ffcc00 !important;
+            box-shadow: 0 0 8px rgba(255, 204, 0, 0.3);
+        }
+
+        .timeline-item.highlight-extreme:hover {
+            background: #5d2f2f !important;
+        }
+
+        .timeline-item.highlight-strong:hover {
+            background: #4d3f2f !important;
+        }
+
+        .timeline-item.highlight-special:hover {
+            background: #2f3d4d !important;
+        }
+
+        .highlight-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .badge-extreme {
+            background: #ff0000;
+            color: #fff;
+        }
+
+        .badge-strong {
+            background: #ff9900;
+            color: #fff;
+        }
+
+        .badge-special {
+            background: #ffcc00;
+            color: #000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #16213e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: #0f1419;
+        }
+
+        th {
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: #4a9eff;
+            border-bottom: 2px solid #2a2a3e;
+        }
+
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            font-size: 13px;
+            border-bottom: 1px solid #2a2a3e;
+        }
+
+        tr:hover {
+            background: #1e2838;
+        }
+
+        .symbol {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .positive {
+            color: #00ff88;
+        }
+
+        .negative {
+            color: #ff4444;
+        }
+
+        .neutral {
+            color: #888;
+        }
+
+        .rush-up {
+            background: #ff4444;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .rush-down {
+            background: #00ff88;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #4a9eff;
+        }
+
+        .error {
+            background: #ff4444;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .info-box {
+            background: #2a3848;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .chart-container {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            height: 400px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f1419;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4a9eff;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a8eef;
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .priority-1 { background: #ff0000; color: #fff; }
+        .priority-2 { background: #ff6600; color: #fff; }
+        .priority-3 { background: #ff9900; color: #fff; }
+        .priority-4 { background: #ffcc00; color: #000; }
+        .priority-5 { background: #99cc00; color: #000; }
+        .priority-6 { background: #666666; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-button" onclick="window.location.href='/'">
+                ← 返回首页
+            </button>
+            <h1>📊 加密货币数据历史回看</h1>
+        </div>
+        
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <div class="control-row">
+                <div class="control-group">
+                    <label>选择日期：</label>
+                    <input type="date" id="dateInput" />
+                </div>
+                <div class="control-group">
+                    <label>时间范围：</label>
+                    <input type="time" id="startTime" value="00:00" />
+                    <span style="color: #888;">至</span>
+                    <input type="time" id="endTime" value="23:59" />
+                </div>
+                <button id="queryBtn" onclick="loadTimelineData()">🔍 查询</button>
+                <button onclick="loadTodayData()">📅 今天</button>
+            </div>
+            
+            <div class="info-box" id="dbInfo">
+                加载中...
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="stats-bar" id="statsBar" style="display:none;">
+            <div class="stat-item">
+                <span class="stat-label">记录时间：</span>
+                <span class="stat-value" id="recordTime">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">急涨：</span>
+                <span class="stat-value up" id="rushUp">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">急跌：</span>
+                <span class="stat-value down" id="rushDown">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">状态：</span>
+                <span class="stat-value" id="status">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比值：</span>
+                <span class="stat-value" id="ratio">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">差值：</span>
+                <span class="stat-value" id="difference">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">绿色数量：</span>
+                <span class="stat-value" id="greenCount">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">百分比：</span>
+                <span class="stat-value" id="percentage">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比价最低：</span>
+                <span class="stat-value" id="priceLowest">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比价创新高：</span>
+                <span class="stat-value" id="priceNewHigh">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">计次：</span>
+                <span class="stat-value" id="countTimes">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">本轮急涨：</span>
+                <span class="stat-value up" id="thisRoundRushUp">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">本轮急跌：</span>
+                <span class="stat-value down" id="thisRoundRushDown">-</span>
+            </div>
+        </div>
+
+        <!-- 曲线图 -->
+        <div class="chart-container" id="chartContainer" style="display:none;">
+            <canvas id="trendChart"></canvas>
+        </div>
+
+        <!-- 时间轴 -->
+        <div class="timeline">
+            <h3 style="color: #4a9eff; margin-bottom: 15px;">⏱️ 时间轴</h3>
+            <div id="timelineList" class="timeline-list">
+                <div class="loading">请选择日期并点击查询</div>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div id="loadingMsg" class="loading" style="display:none;">正在加载数据...</div>
+        <div id="errorMsg" class="error" style="display:none;"></div>
+
+        <table id="dataTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>优先级</th>
+                    <th>序号</th>
+                    <th>币名</th>
+                    <th>涨速</th>
+                    <th>急涨</th>
+                    <th>急跌</th>
+                    <th>更新时间</th>
+                    <th>历史高价</th>
+                    <th>高价时间</th>
+                    <th>跌幅</th>
+                    <th>24h涨幅</th>
+                    <th>排行</th>
+                    <th>当前价格</th>
+                    <th>最高点比</th>
+                    <th>最低点比</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let currentData = [];
+        let selectedIndex = -1;
+        let trendChart = null;
+
+        // 优先级计算函数
+        function parseRatio(ratioStr) {
+            if (!ratioStr || ratioStr === '-') return 0;
+            try {
+                return parseFloat(ratioStr.replace('%', ''));
+            } catch {
+                return 0;
+            }
+        }
+
+        function calculatePriority(ratio1Str, ratio2Str) {
+            const ratio1 = parseRatio(ratio1Str); // 最高点比
+            const ratio2 = parseRatio(ratio2Str); // 最低点比
+            
+            // 按优先级顺序判断
+            if (ratio1 > 90 && ratio2 > 120) return { level: 1, text: '等级1' };
+            if (ratio1 > 80 && ratio2 > 120) return { level: 2, text: '等级2' };
+            if (ratio1 > 90 && ratio2 > 110) return { level: 3, text: '等级3' };
+            if (ratio1 > 70 && ratio2 > 120) return { level: 4, text: '等级4' };
+            if (ratio1 > 80 && ratio2 > 110) return { level: 5, text: '等级5' };
+            return { level: 6, text: '等级6' };
+        }
+
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '急涨',
+                            data: [],
+                            borderColor: '#ff4444',
+                            backgroundColor: 'rgba(255, 68, 68, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 7,
+                            pointHoverRadius: 12,
+                            pointBackgroundColor: '#ff4444',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 3,
+                            pointHoverBorderWidth: 5,
+                            pointHoverBackgroundColor: '#ff6666',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '急跌',
+                            data: [],
+                            borderColor: '#00ff88',
+                            backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 7,
+                            pointHoverRadius: 12,
+                            pointBackgroundColor: '#00ff88',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 3,
+                            pointHoverBorderWidth: 5,
+                            pointHoverBackgroundColor: '#33ffaa',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: '差值 (急涨-急跌)',
+                            data: [],
+                            borderColor: '#ffaa00',
+                            backgroundColor: 'rgba(255, 170, 0, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 10,
+                            pointBackgroundColor: '#ffaa00',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointHoverBorderWidth: 4,
+                            pointHoverBackgroundColor: '#ffcc33',
+                            tension: 0.4,
+                            fill: false,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: '计次',
+                            data: [],
+                            borderColor: '#00ccff',
+                            backgroundColor: 'rgba(0, 204, 255, 0.2)',
+                            borderWidth: 3,
+                            pointRadius: 7,
+                            pointHoverRadius: 12,
+                            pointBackgroundColor: '#00ccff',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 3,
+                            pointHoverBorderWidth: 5,
+                            pointHoverBackgroundColor: '#33ddff',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { 
+                                color: '#eee',
+                                font: { size: 14 },
+                                padding: 15
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '急涨/急跌历史趋势图',
+                            color: '#4a9eff',
+                            font: { size: 18, weight: 'bold' }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#4a9eff',
+                            bodyColor: '#eee',
+                            borderColor: '#4a9eff',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.parsed.y;
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { 
+                                color: '#888',
+                                font: { size: 12 },
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: { 
+                                color: 'rgba(255, 255, 255, 0.1)',
+                                drawBorder: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { 
+                                color: '#888',
+                                font: { size: 12 },
+                                stepSize: 1
+                            },
+                            grid: { 
+                                color: 'rgba(255, 255, 255, 0.1)',
+                                drawBorder: false
+                            },
+                            title: {
+                                display: true,
+                                text: '数量',
+                                color: '#aaa',
+                                font: { size: 13 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 加载数据库统计信息
+        async function loadDbStats() {
+            try {
+                const response = await fetch('/api/history/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.stats;
+                    document.getElementById('dbInfo').innerHTML = `
+                        📊 数据库统计：共 ${stats.total_records} 条记录，
+                        覆盖 ${stats.days} 天，
+                        时间范围：${stats.earliest || '-'} ~ ${stats.latest || '-'}
+                    `;
+                }
+            } catch (error) {
+                console.error('加载统计失败:', error);
+            }
+        }
+
+        // 加载时间轴数据
+        async function loadTimelineData() {
+            const date = document.getElementById('dateInput').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            if (!date) {
+                alert('请选择日期');
+                return;
+            }
+            
+            const start = `${date} ${startTime}:00`;
+            const end = `${date} ${endTime}:59`;
+            
+            try {
+                document.getElementById('timelineList').innerHTML = '<div class="loading">正在查询...</div>';
+                
+                const response = await fetch(`/api/history/query?start_time=${encodeURIComponent(start)}&end_time=${encodeURIComponent(end)}&limit=200`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '查询失败');
+                }
+                
+                currentData = result.data;
+                
+                if (currentData.length === 0) {
+                    document.getElementById('timelineList').innerHTML = '<div class="loading">没有找到数据</div>';
+                    return;
+                }
+                
+                // 显示时间轴
+                // 用于跟踪是否已标注过急涨/急跌>10（只标注一次）
+                let hasMarkedSpecial = false;
+                
+                const html = currentData.map((item, index) => {
+                    const rushUp = parseInt(item.rush_up) || 0;
+                    const rushDown = parseInt(item.rush_down) || 0;
+                    const diff = rushUp - rushDown;
+                    
+                    // 判断高亮等级
+                    let highlightClass = '';
+                    let badges = [];
+                    
+                    // 1. 差值 > 50 或 < -50 （最高优先级）
+                    if (Math.abs(diff) > 50) {
+                        highlightClass = 'highlight-extreme';
+                        badges.push(`<span class="highlight-badge badge-extreme">极端差值: ${diff > 0 ? '+' : ''}${diff}</span>`);
+                    }
+                    // 2. 差值 > 20 或 < -20
+                    else if (Math.abs(diff) > 20) {
+                        highlightClass = 'highlight-strong';
+                        badges.push(`<span class="highlight-badge badge-strong">大差值: ${diff > 0 ? '+' : ''}${diff}</span>`);
+                    }
+                    // 3. 急涨或急跌 > 10（只标注一次）
+                    else if (!hasMarkedSpecial && (rushUp > 10 || rushDown > 10)) {
+                        highlightClass = 'highlight-special';
+                        if (rushUp > 10) badges.push(`<span class="highlight-badge badge-special">急涨超10</span>`);
+                        if (rushDown > 10) badges.push(`<span class="highlight-badge badge-special">急跌超10</span>`);
+                        hasMarkedSpecial = true;
+                    }
+                    
+                    const badgeHtml = badges.join('');
+                    
+                    return `
+                        <div class="timeline-item ${highlightClass}" onclick="selectRecord(${index})">
+                            <div class="timeline-time">${item.record_time}${badgeHtml}</div>
+                            <div class="timeline-stats">
+                                <span>急涨: <span class="positive">${item.rush_up}</span></span>
+                                <span>急跌: <span class="negative">${item.rush_down}</span></span>
+                                <span>本轮急涨: <span class="positive">${item.this_round_rush_up !== null ? item.this_round_rush_up : '-'}</span></span>
+                                <span>本轮急跌: <span class="negative">${item.this_round_rush_down !== null ? item.this_round_rush_down : '-'}</span></span>
+                                <span>状态: ${item.status}</span>
+                                <span>比值: ${item.ratio || '无'}</span>
+                                <span>差值: ${item.difference || '无'}</span>
+                                <span>计次: ${item.count_times !== null ? item.count_times : '-'}</span>
+                                <span>绿色: ${item.green_count}</span>
+                                <span>百分比: ${item.percentage || '无'}</span>
+                                <span>比价最低: ${item.price_lowest || '无'}</span>
+                                <span>比价创新高: ${item.price_new_high || '无'}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                document.getElementById('timelineList').innerHTML = html;
+                
+                // 先更新图表（显示所有数据点）
+                updateChart();
+                
+                // 然后自动选择第一条记录（显示详细信息）
+                if (currentData.length > 0) {
+                    selectRecord(0);
+                }
+                
+            } catch (error) {
+                console.error('查询失败:', error);
+                document.getElementById('timelineList').innerHTML = `<div class="error">❌ ${error.message}</div>`;
+            }
+        }
+
+        // 选择记录
+        function selectRecord(index) {
+            selectedIndex = index;
+            const record = currentData[index];
+            
+            // 更新时间轴高亮
+            document.querySelectorAll('.timeline-item').forEach((el, i) => {
+                if (i === index) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+            
+            // 显示统计信息
+            document.getElementById('statsBar').style.display = 'flex';
+            document.getElementById('recordTime').textContent = record.record_time;
+            document.getElementById('rushUp').textContent = record.rush_up;
+            document.getElementById('rushDown').textContent = record.rush_down;
+            document.getElementById('status').textContent = record.status;
+            document.getElementById('ratio').textContent = record.ratio || '无';
+            document.getElementById('difference').textContent = record.difference || '无';
+            document.getElementById('greenCount').textContent = record.green_count;
+            document.getElementById('percentage').textContent = record.percentage || '无';
+            document.getElementById('priceLowest').textContent = record.price_lowest || '无';
+            document.getElementById('priceNewHigh').textContent = record.price_new_high || '无';
+            document.getElementById('countTimes').textContent = record.count_times !== null ? record.count_times : '-';
+            document.getElementById('thisRoundRushUp').textContent = record.this_round_rush_up !== null ? record.this_round_rush_up : '-';
+            document.getElementById('thisRoundRushDown').textContent = record.this_round_rush_down !== null ? record.this_round_rush_down : '-';
+            
+            // 显示币种数据
+            displayCoins(record.coins);
+        }
+
+        // 显示币种数据
+        function displayCoins(coins) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            coins.forEach(coin => {
+                const row = document.createElement('tr');
+                
+                const changeClass = parseFloat(coin.change) > 0 ? 'positive' : 
+                                   parseFloat(coin.change) < 0 ? 'negative' : 'neutral';
+                
+                const change24hClass = parseFloat(coin.change_24h) > 0 ? 'positive' : 
+                                      parseFloat(coin.change_24h) < 0 ? 'negative' : 'neutral';
+                
+                // 计算优先级
+                const priority = calculatePriority(coin.ratio1, coin.ratio2);
+
+                row.innerHTML = `
+                    <td><span class="priority-badge priority-${priority.level}">${priority.text}</span></td>
+                    <td>${coin.index_num}</td>
+                    <td class="symbol">${coin.symbol}</td>
+                    <td class="${changeClass}">${coin.change}</td>
+                    <td>${coin.rush_up > 0 ? `<span class="rush-up">${coin.rush_up}</span>` : coin.rush_up}</td>
+                    <td>${coin.rush_down > 0 ? `<span class="rush-down">${coin.rush_down}</span>` : coin.rush_down}</td>
+                    <td>${coin.update_time}</td>
+                    <td>${coin.high_price}</td>
+                    <td>${coin.high_time}</td>
+                    <td class="negative">${coin.decline}</td>
+                    <td class="${change24hClass}">${coin.change_24h}</td>
+                    <td>${coin.rank}</td>
+                    <td>${coin.current_price}</td>
+                    <td>${coin.ratio1}</td>
+                    <td>${coin.ratio2}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            document.getElementById('dataTable').style.display = 'table';
+        }
+
+        // 更新图表
+        function updateChart() {
+            if (!trendChart || currentData.length === 0) {
+                document.getElementById('chartContainer').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('chartContainer').style.display = 'block';
+            
+            // 按时间排序（从早到晚）
+            const sortedData = [...currentData].sort((a, b) => 
+                new Date(a.record_time) - new Date(b.record_time)
+            );
+            
+            console.log('更新图表，数据点数量:', sortedData.length);
+            
+            // 提取时间标签
+            trendChart.data.labels = sortedData.map(d => {
+                const time = d.record_time.split(' ')[1];
+                return time.substring(0, 5); // HH:MM
+            });
+            
+            // 提取急涨数据
+            trendChart.data.datasets[0].data = sortedData.map(d => parseInt(d.rush_up) || 0);
+            
+            // 提取急跌数据
+            trendChart.data.datasets[1].data = sortedData.map(d => parseInt(d.rush_down) || 0);
+            
+            // 计算差值数据
+            trendChart.data.datasets[2].data = sortedData.map(d => {
+                const up = parseInt(d.rush_up) || 0;
+                const down = parseInt(d.rush_down) || 0;
+                return up - down;
+            });
+            
+            // 提取计次数据
+            trendChart.data.datasets[3].data = sortedData.map(d => parseInt(d.count_times) || 0);
+            
+            // 🌟 根据条件设置数据点高亮
+            // 标记：急涨或急跌 >= 10（只标注第一次）
+            let hasMarkedRush10 = false;
+            // 标记：差值 >= 20 或 <= -20（只标注第一次）
+            let hasMarkedDiff20 = false;
+            // 标记：差值 >= 50 或 <= -50（只标注第一次）
+            let hasMarkedDiff50 = false;
+            
+            // 为急涨/急跌曲线设置高亮点
+            const rushUpPointRadius = [];
+            const rushUpPointBorderWidth = [];
+            const rushUpPointBackgroundColor = [];
+            const rushDownPointRadius = [];
+            const rushDownPointBorderWidth = [];
+            const rushDownPointBackgroundColor = [];
+            
+            // 为差值曲线设置高亮点
+            const diffPointRadius = [];
+            const diffPointBorderWidth = [];
+            const diffPointBackgroundColor = [];
+            
+            sortedData.forEach((d, index) => {
+                const rushUp = parseInt(d.rush_up) || 0;
+                const rushDown = parseInt(d.rush_down) || 0;
+                const diff = rushUp - rushDown;
+                
+                // 默认样式
+                let rushUpRadius = 7;
+                let rushUpBorderWidth = 3;
+                let rushUpColor = '#ff4444';
+                
+                let rushDownRadius = 7;
+                let rushDownBorderWidth = 3;
+                let rushDownColor = '#00ff88';
+                
+                let diffRadius = 6;
+                let diffBorderWidth = 2;
+                let diffColor = '#ffaa00';
+                
+                // 条件1: 急涨 >= 10（只标注急涨曲线的第一次）
+                if (!hasMarkedRush10 && rushUp >= 10) {
+                    // 只高亮急涨曲线
+                    rushUpRadius = 14;
+                    rushUpBorderWidth = 6;
+                    rushUpColor = '#ffff00';  // 黄色高亮
+                    hasMarkedRush10 = true;
+                    console.log(`🌟 高亮：急涨>=10 at ${d.record_time}, 急涨=${rushUp}`);
+                }
+                
+                // 条件1b: 急跌 >= 10（单独判断，不与急涨共用标记）
+                if (rushDown >= 10) {
+                    // 只高亮急跌曲线
+                    rushDownRadius = 14;
+                    rushDownBorderWidth = 6;
+                    rushDownColor = '#ffff00';  // 黄色高亮
+                    console.log(`🌟 高亮：急跌>=10 at ${d.record_time}, 急跌=${rushDown}`);
+                }
+                
+                // 条件2: 差值 >= 50 或 <= -50（只标注第一次，最高优先级）
+                if (!hasMarkedDiff50 && Math.abs(diff) >= 50) {
+                    diffRadius = 16;
+                    diffBorderWidth = 7;
+                    diffColor = '#ff00ff';  // 紫红色高亮（极端）
+                    hasMarkedDiff50 = true;
+                    hasMarkedDiff20 = true;  // 也满足20条件，跳过
+                    console.log(`🌟🌟🌟 高亮：差值>=50 at ${d.record_time}, 差值=${diff}`);
+                }
+                // 条件3: 差值 >= 20 或 <= -20（只标注第一次）
+                else if (!hasMarkedDiff20 && Math.abs(diff) >= 20) {
+                    diffRadius = 14;
+                    diffBorderWidth = 6;
+                    diffColor = '#ff6600';  // 橙红色高亮
+                    hasMarkedDiff20 = true;
+                    console.log(`🌟🌟 高亮：差值>=20 at ${d.record_time}, 差值=${diff}`);
+                }
+                
+                // 记录每个点的样式
+                rushUpPointRadius.push(rushUpRadius);
+                rushUpPointBorderWidth.push(rushUpBorderWidth);
+                rushUpPointBackgroundColor.push(rushUpColor);
+                
+                rushDownPointRadius.push(rushDownRadius);
+                rushDownPointBorderWidth.push(rushDownBorderWidth);
+                rushDownPointBackgroundColor.push(rushDownColor);
+                
+                diffPointRadius.push(diffRadius);
+                diffPointBorderWidth.push(diffBorderWidth);
+                diffPointBackgroundColor.push(diffColor);
+            });
+            
+            // 应用高亮样式
+            trendChart.data.datasets[0].pointRadius = rushUpPointRadius;
+            trendChart.data.datasets[0].pointBorderWidth = rushUpPointBorderWidth;
+            trendChart.data.datasets[0].pointBackgroundColor = rushUpPointBackgroundColor;
+            
+            trendChart.data.datasets[1].pointRadius = rushDownPointRadius;
+            trendChart.data.datasets[1].pointBorderWidth = rushDownPointBorderWidth;
+            trendChart.data.datasets[1].pointBackgroundColor = rushDownPointBackgroundColor;
+            
+            trendChart.data.datasets[2].pointRadius = diffPointRadius;
+            trendChart.data.datasets[2].pointBorderWidth = diffPointBorderWidth;
+            trendChart.data.datasets[2].pointBackgroundColor = diffPointBackgroundColor;
+            
+            console.log('时间点:', trendChart.data.labels);
+            console.log('急涨数据:', trendChart.data.datasets[0].data);
+            console.log('急跌数据:', trendChart.data.datasets[1].data);
+            console.log('差值数据:', trendChart.data.datasets[2].data);
+            console.log('计次数据:', trendChart.data.datasets[3].data);
+            
+            trendChart.update('active');
+        }
+
+        // 加载今天的数据
+        function loadTodayData() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+            loadTimelineData();
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            loadDbStats();
+            
+            // 设置默认日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+        });
+    </script>
+</body>
+</html>

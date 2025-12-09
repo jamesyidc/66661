@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>币名列表简单测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a192f;
+            color: #fff;
+            padding: 40px;
+        }
+        
+        .box {
+            background: rgba(22, 33, 62, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 2px solid rgba(74, 158, 255, 0.5);
+        }
+        
+        h1 {
+            color: #4a9eff;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        
+        .section-title {
+            color: #00ff88;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .coin-list {
+            padding: 10px;
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            border-radius: 8px;
+            min-height: 50px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .coin-tag {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 4px;
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.3) 0%, rgba(102, 126, 234, 0.3) 100%);
+            border: 1px solid rgba(74, 158, 255, 0.6);
+            border-radius: 6px;
+            color: #4a9eff;
+            font-size: 14px;
+            font-weight: 700;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .coin-tag:hover {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.5) 0%, rgba(102, 126, 234, 0.5) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>🪙 币名列表显示测试</h1>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="loadAndDisplay()">🔄 加载币种数据</button>
+            <button onclick="testStaticDisplay()">✨ 测试静态显示</button>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">8️⃣ 只有急涨的币种</div>
+            <div class="coin-list" id="onlyRushUp">
+                <span style="color: #888;">点击按钮加载数据...</span>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">9️⃣ 急涨>急跌的币种</div>
+            <div class="coin-list" id="upGreaterDown">
+                <span style="color: #888;">点击按钮加载数据...</span>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">🔟 优先级≥4的币种</div>
+            <div class="coin-list" id="priority">
+                <span style="color: #888;">点击按钮加载数据...</span>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">1️⃣1️⃣ 只有急跌的币种</div>
+            <div class="coin-list" id="onlyRushDown">
+                <span style="color: #888;">点击按钮加载数据...</span>
+            </div>
+        </div>
+        
+        <div class="status" id="status"></div>
+    </div>
+    
+    <script>
+        // 测试静态显示
+        function testStaticDisplay() {
+            document.getElementById('onlyRushUp').innerHTML = 
+                '<span class="coin-tag">FIL</span>' +
+                '<span class="coin-tag">LINK</span>' +
+                '<span class="coin-tag">DOT</span>';
+            
+            document.getElementById('upGreaterDown').innerHTML = 
+                '<span class="coin-tag">SUI</span>' +
+                '<span class="coin-tag">BCH</span>' +
+                '<span class="coin-tag">FIL</span>' +
+                '<span class="coin-tag">LINK</span>' +
+                '<span class="coin-tag">DOT</span>';
+            
+            document.getElementById('priority').innerHTML = 
+                '<span class="coin-tag">BCH</span>';
+            
+            document.getElementById('onlyRushDown').innerHTML = 
+                '<span class="coin-tag">LDO</span>';
+            
+            document.getElementById('status').innerHTML = 
+                '✅ 静态测试数据已加载（如果你能看到蓝色标签，说明样式正常）';
+        }
+        
+        // 从API加载真实数据
+        async function loadAndDisplay() {
+            try {
+                document.getElementById('status').innerHTML = '⏳ 正在加载数据...';
+                
+                const response = await fetch('/api/home-data');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || '数据加载失败');
+                }
+                
+                const coins = data.data.coins;
+                console.log('Total coins:', coins.length);
+                
+                // 8. 只有急涨
+                const onlyRushUp = coins.filter(c => {
+                    const up = parseInt(c.rushUp) || 0;
+                    const down = parseInt(c.rushDown) || 0;
+                    return up > 0 && down === 0;
+                });
+                
+                // 9. 急涨>急跌
+                const upGreaterDown = coins.filter(c => {
+                    const up = parseInt(c.rushUp) || 0;
+                    const down = parseInt(c.rushDown) || 0;
+                    return up > down;
+                });
+                
+                // 10. 优先级≥4
+                const priority = coins.filter(c => {
+                    const p = calculatePriority(c.ratio1, c.ratio2);
+                    return p.level >= 1 && p.level <= 4;
+                });
+                
+                // 11. 只有急跌
+                const onlyRushDown = coins.filter(c => {
+                    const up = parseInt(c.rushUp) || 0;
+                    const down = parseInt(c.rushDown) || 0;
+                    return down > 0 && up === 0;
+                });
+                
+                // 显示结果
+                displayCoins('onlyRushUp', onlyRushUp);
+                displayCoins('upGreaterDown', upGreaterDown);
+                displayCoins('priority', priority);
+                displayCoins('onlyRushDown', onlyRushDown);
+                
+                document.getElementById('status').innerHTML = 
+                    `✅ 数据加载成功！<br>` +
+                    `只有急涨: ${onlyRushUp.length} 个<br>` +
+                    `急涨>急跌: ${upGreaterDown.length} 个<br>` +
+                    `优先级≥4: ${priority.length} 个<br>` +
+                    `只有急跌: ${onlyRushDown.length} 个`;
+                    
+            } catch (error) {
+                document.getElementById('status').innerHTML = 
+                    `❌ 加载失败: ${error.message}`;
+                console.error('Error:', error);
+            }
+        }
+        
+        function displayCoins(elementId, coins) {
+            const html = coins.map(c => 
+                `<span class="coin-tag">${c.symbol}</span>`
+            ).join('');
+            
+            document.getElementById(elementId).innerHTML = 
+                html || '<span style="color: #888;">无数据</span>';
+        }
+        
+        function calculatePriority(ratio1Str, ratio2Str) {
+            try {
+                const ratio1 = parseFloat(ratio1Str.replace('%', ''));
+                const ratio2 = parseFloat(ratio2Str.replace('%', ''));
+                
+                if (ratio1 > 90 && ratio2 > 120) return { level: 1, text: '等级1' };
+                if (ratio1 > 80 && ratio2 > 120) return { level: 2, text: '等级2' };
+                if (ratio1 > 90 && ratio2 > 110) return { level: 3, text: '等级3' };
+                if (ratio1 > 80 && ratio2 > 110) return { level: 4, text: '等级4' };
+                if (ratio1 > 70 && ratio2 > 110) return { level: 5, text: '等级5' };
+                return { level: 6, text: '等级6' };
+            } catch {
+                return { level: 6, text: '等级6' };
+            }
+        }
+        
+        // 页面加载时显示静态测试数据
+        window.onload = function() {
+            testStaticDisplay();
+        };
+    </script>
+</body>
+</html>

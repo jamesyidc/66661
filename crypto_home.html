@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加密货币首页数据监控</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a9eff;
+            margin-bottom: 20px;
+        }
+
+        .stats-bar {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .stat-value.up {
+            color: #00ff88;
+        }
+
+        .stat-value.down {
+            color: #ff4444;
+        }
+
+        .update-time {
+            color: #4a9eff;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #16213e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: #0f1419;
+        }
+
+        th {
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: #4a9eff;
+            border-bottom: 2px solid #2a2a3e;
+        }
+
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            font-size: 13px;
+            border-bottom: 1px solid #2a2a3e;
+        }
+
+        tr:hover {
+            background: #1e2838;
+        }
+
+        .symbol {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .positive {
+            color: #00ff88;
+        }
+
+        .negative {
+            color: #ff4444;
+        }
+
+        .neutral {
+            color: #888;
+        }
+
+        .rush-up {
+            background: #ff4444;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .rush-down {
+            background: #00ff88;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #4a9eff;
+        }
+
+        .error {
+            background: #ff4444;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🪙 加密货币首页数据监控</h1>
+        
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item">
+                <span class="stat-label">急涨：</span>
+                <span class="stat-value up" id="rushUp">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">急跌：</span>
+                <span class="stat-value down" id="rushDown">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">状态：</span>
+                <span class="stat-value" id="status">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">比值：</span>
+                <span class="stat-value" id="ratio">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">绿色数量：</span>
+                <span class="stat-value" id="greenCount">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">百分比：</span>
+                <span class="stat-value" id="percentage">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="update-time" id="updateTime">更新时间: --</span>
+            </div>
+        </div>
+
+        <div id="loadingMsg" class="loading">正在加载数据...</div>
+        <div id="errorMsg" class="error" style="display:none;"></div>
+
+        <table id="dataTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th>币名</th>
+                    <th>涨速</th>
+                    <th>急涨</th>
+                    <th>急跌</th>
+                    <th>更新时间</th>
+                    <th>历史高价</th>
+                    <th>高价时间</th>
+                    <th>跌幅</th>
+                    <th>24h涨幅</th>
+                    <th>排行</th>
+                    <th>当前价格</th>
+                    <th>最高点比</th>
+                    <th>最低点比</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let autoRefreshTimer = null;
+
+        async function loadData() {
+            try {
+                const response = await fetch('/api/home-data');
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || '数据加载失败');
+                }
+
+                const data = result.data;
+
+                // 更新统计信息
+                document.getElementById('rushUp').textContent = data.stats.rushUp || 0;
+                document.getElementById('rushDown').textContent = data.stats.rushDown || 0;
+                document.getElementById('status').textContent = data.stats.status || '-';
+                document.getElementById('ratio').textContent = data.stats.ratio || '-';
+                document.getElementById('greenCount').textContent = data.stats.greenCount || 0;
+                document.getElementById('percentage').textContent = data.stats.percentage || '-';
+                document.getElementById('updateTime').textContent = `更新时间: ${data.updateTime}`;
+
+                // 更新表格数据
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = '';
+
+                data.coins.forEach(coin => {
+                    const row = document.createElement('tr');
+                    
+                    const changeClass = parseFloat(coin.change) > 0 ? 'positive' : 
+                                       parseFloat(coin.change) < 0 ? 'negative' : 'neutral';
+                    
+                    const change24hClass = parseFloat(coin.change24h) > 0 ? 'positive' : 
+                                          parseFloat(coin.change24h) < 0 ? 'negative' : 'neutral';
+
+                    row.innerHTML = `
+                        <td>${coin.index}</td>
+                        <td class="symbol">${coin.symbol}</td>
+                        <td class="${changeClass}">${coin.change}</td>
+                        <td>${coin.rushUp > 0 ? `<span class="rush-up">${coin.rushUp}</span>` : coin.rushUp}</td>
+                        <td>${coin.rushDown > 0 ? `<span class="rush-down">${coin.rushDown}</span>` : coin.rushDown}</td>
+                        <td>${coin.updateTime}</td>
+                        <td>${coin.highPrice}</td>
+                        <td>${coin.highTime}</td>
+                        <td class="negative">${coin.decline}</td>
+                        <td class="${change24hClass}">${coin.change24h}</td>
+                        <td>${coin.rank}</td>
+                        <td>${coin.currentPrice}</td>
+                        <td>${coin.ratio1}</td>
+                        <td>${coin.ratio2}</td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+
+                // 显示表格，隐藏加载提示
+                document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('errorMsg').style.display = 'none';
+                document.getElementById('dataTable').style.display = 'table';
+
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                document.getElementById('loadingMsg').style.display = 'none';
+                document.getElementById('errorMsg').textContent = '❌ 数据加载失败: ' + error.message;
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+
+        function startAutoRefresh() {
+            // 每10分钟刷新一次
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
+            autoRefreshTimer = setInterval(() => {
+                console.log('自动刷新数据...');
+                loadData();
+            }, 10 * 60 * 1000);
+        }
+
+        // 页面加载时立即获取数据
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            startAutoRefresh();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>币名显示测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(22, 33, 62, 0.8);
+            border-radius: 10px;
+        }
+
+        .coin-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 11px;
+            text-align: left;
+            padding: 8px;
+            margin-top: 8px;
+            display: block;
+            width: 100%;
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            border-radius: 5px;
+        }
+
+        .coin-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            margin: 3px 2px;
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.3) 0%, rgba(102, 126, 234, 0.3) 100%);
+            border: 1px solid rgba(74, 158, 255, 0.6);
+            border-radius: 5px;
+            color: #4a9eff;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .coin-tag:hover {
+            background: linear-gradient(135deg, rgba(74, 158, 255, 0.4) 0%, rgba(102, 126, 234, 0.4) 100%);
+            border-color: #4a9eff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(74, 158, 255, 0.3);
+        }
+
+        button {
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>币名显示测试</h1>
+        
+        <h3>只有急涨的币种：</h3>
+        <div class="coin-list" id="testList"></div>
+
+        <button onclick="loadData()">加载数据</button>
+
+        <div id="result" style="margin-top: 20px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;"></div>
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                const response = await fetch('/api/home-data');
+                const data = await response.json();
+
+                if (data.success) {
+                    const coins = data.data.coins;
+                    
+                    // 筛选只有急涨的币种
+                    const onlyRushUpCoins = coins.filter(c => {
+                        const rushUp = parseInt(c.rushUp) || 0;
+                        const rushDown = parseInt(c.rushDown) || 0;
+                        return rushUp > 0 && rushDown === 0;
+                    });
+
+                    // 生成币名列表
+                    const html = onlyRushUpCoins.map(c => 
+                        `<span class="coin-tag">${c.symbol}</span>`
+                    ).join('');
+
+                    document.getElementById('testList').innerHTML = html;
+
+                    // 显示结果信息
+                    document.getElementById('result').innerHTML = `
+                        <strong>测试结果：</strong><br>
+                        找到 ${onlyRushUpCoins.length} 个只有急涨的币种<br>
+                        币种列表：${onlyRushUpCoins.map(c => c.symbol).join(', ')}<br>
+                        <br>
+                        生成的HTML长度：${html.length} 字符
+                    `;
+
+                    console.log('只有急涨的币种:', onlyRushUpCoins);
+                    console.log('生成的HTML:', html);
+                } else {
+                    document.getElementById('result').innerHTML = '❌ 数据加载失败: ' + data.error;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = '❌ 请求失败: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+
+        // 页面加载时自动执行
+        window.onload = loadData;
+    </script>
+</body>
+</html>

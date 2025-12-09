@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>缓存测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        .info-box {
+            background: #16213e;
+            border: 2px solid #4a9eff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .version {
+            font-size: 24px;
+            color: #4a9eff;
+            font-weight: bold;
+        }
+        .timestamp {
+            color: #00ff88;
+            font-size: 18px;
+        }
+        a {
+            color: #4a9eff;
+            text-decoration: none;
+            font-size: 18px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 缓存测试页面</h1>
+    
+    <div class="info-box">
+        <p class="version">✅ 当前版本: V2.2 - 历史数据曲线</p>
+        <p class="timestamp">⏰ 生成时间: <span id="time"></span></p>
+        <p>🔄 如果您看到此页面，说明服务器已更新到最新版本</p>
+    </div>
+    
+    <div class="info-box">
+        <h2>📝 清除浏览器缓存的方法：</h2>
+        <ul>
+            <li><strong>Windows/Linux:</strong> Ctrl + Shift + R 或 Ctrl + F5</li>
+            <li><strong>Mac:</strong> Cmd + Shift + R</li>
+            <li><strong>或者:</strong> 使用浏览器的无痕/隐私模式</li>
+        </ul>
+    </div>
+    
+    <div class="info-box">
+        <h2>🔗 快速链接：</h2>
+        <p><a href="/live">➡️ 进入实时监控页面 (/live)</a></p>
+        <p><a href="/history">➡️ 进入历史回看页面 (/history)</a></p>
+        <p><a href="/">➡️ 返回首页</a></p>
+    </div>
+
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString('zh-CN');
+        console.log('✅ V2.2 测试页面已加载');
+        console.log('⏰ 时间:', new Date().toLocaleString('zh-CN'));
+    </script>
+</body>
+</html>
