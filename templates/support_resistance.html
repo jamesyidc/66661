@@ -1405,6 +1405,101 @@
         }
     </style>
     
+    <!-- Telegram 设置模态框 -->
+    <div id="telegramSettingsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 16px; padding: 30px; max-width: 600px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+            <h2 style="margin: 0 0 20px 0; font-size: 24px; display: flex; align-items: center; gap: 10px;">
+                <span>⚙️</span>
+                <span>Telegram 信号推送设置</span>
+            </h2>
+            
+            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px 0; font-size: 14px; color: rgba(255,255,255,0.9);">
+                    💡 提示:
+                </p>
+                <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.8;">
+                    <li>启用后，符合条件的信号会自动推送到 Telegram</li>
+                    <li>单一信号：只触发支撑1或支撑2，只触发压力1或压力2</li>
+                    <li>双重信号：同时触发支撑1和支撑2，同时触发压力1和压力2</li>
+                    <li>推送间隔：300秒 (5分钟) 冷却时间</li>
+                </ul>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 16px; margin-bottom: 15px; color: #4ade80;">📍 信号类型开关</h3>
+                
+                <!-- 抄底信号 -->
+                <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 20px;">🟢</span>
+                        <div>
+                            <div style="font-weight: 600; font-size: 15px;">抄底信号</div>
+                            <div style="font-size: 12px; color: rgba(255,255,255,0.7);">触发支撑线1或支撑线2</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle_buy">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <!-- 逃顶信号 -->
+                <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 20px;">🔴</span>
+                        <div>
+                            <div style="font-weight: 600; font-size: 15px;">逃顶信号</div>
+                            <div style="font-size: 12px; color: rgba(255,255,255,0.7);">触发压力线1或压力线2</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle_sell">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <!-- 双重抄底信号 -->
+                <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 20px;">🟢🟢</span>
+                        <div>
+                            <div style="font-weight: 600; font-size: 15px;">双重抄底信号</div>
+                            <div style="font-size: 12px; color: rgba(255,255,255,0.7);">同时触发支撑线1和支撑线2</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle_double_buy">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                
+                <!-- 双重逃顶信号 -->
+                <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 20px;">🔴🔴</span>
+                        <div>
+                            <div style="font-weight: 600; font-size: 15px;">双重逃顶信号</div>
+                            <div style="font-size: 12px; color: rgba(255,255,255,0.7);">同时触发压力线1和压力线2</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle_double_sell">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeTelegramSettingsModal()" style="flex: 1; padding: 12px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; background: rgba(255,255,255,0.2); color: white; transition: all 0.3s;">
+                    取消
+                </button>
+                <button onclick="saveTelegramSettings()" style="flex: 1; padding: 12px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; transition: all 0.3s;">
+                    保存设置
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <script>
         let currentData = [];
         let currentSortField = null;
@@ -3532,101 +3627,6 @@
                             </button>
                             <button onclick="importData()" style="flex: 1; padding: 12px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; transition: all 0.3s;">
                                 开始导入
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Telegram 设置弹窗 -->
-                <div id="telegramSettingsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center;">
-                    <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); border-radius: 16px; padding: 30px; max-width: 600px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
-                        <h2 style="margin: 0 0 20px 0; font-size: 24px; display: flex; align-items: center; gap: 10px;">
-                            <span>⚙️</span>
-                            <span>Telegram 信号推送设置</span>
-                        </h2>
-                        
-                        <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                            <p style="margin: 0 0 10px 0; font-size: 14px; color: rgba(255,255,255,0.9);">
-                                💡 提示:
-                            </p>
-                            <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.8;">
-                                <li>启用后，符合条件的信号会自动推送到 Telegram</li>
-                                <li>单一信号：只触发支撑1或支撑2，只触发压力1或压力2</li>
-                                <li>双重信号：同时触发支撑1和支撑2，同时触发压力1和压力2</li>
-                                <li>推送间隔：300秒 (5分钟) 冷却时间</li>
-                            </ul>
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <h3 style="font-size: 16px; margin-bottom: 15px; color: #4ade80;">📍 信号类型开关</h3>
-                            
-                            <!-- 抄底信号 -->
-                            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <span style="font-size: 20px;">🟢</span>
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 15px;">抄底信号</div>
-                                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">触发支撑线1或支撑线2</div>
-                                    </div>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="toggle_buy">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            
-                            <!-- 逃顶信号 -->
-                            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <span style="font-size: 20px;">🔴</span>
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 15px;">逃顶信号</div>
-                                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">触发压力线1或压力线2</div>
-                                    </div>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="toggle_sell">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            
-                            <!-- 双重抄底信号 -->
-                            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <span style="font-size: 20px;">🟢🟢</span>
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 15px;">双重抄底信号</div>
-                                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">同时触发支撑线1和支撑线2</div>
-                                    </div>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="toggle_double_buy">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            
-                            <!-- 双重逃顶信号 -->
-                            <div style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <span style="font-size: 20px;">🔴🔴</span>
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 15px;">双重逃顶信号</div>
-                                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">同时触发压力线1和压力线2</div>
-                                    </div>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="toggle_double_sell">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div style="display: flex; gap: 10px;">
-                            <button onclick="closeTelegramSettingsModal()" style="flex: 1; padding: 12px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; background: rgba(255,255,255,0.2); color: white; transition: all 0.3s;">
-                                取消
-                            </button>
-                            <button onclick="saveTelegramSettings()" style="flex: 1; padding: 12px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; transition: all 0.3s;">
-                                保存设置
                             </button>
                         </div>
                     </div>
