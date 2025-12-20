@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RSI Filter Test</title>
+</head>
+<body>
+    <h1>RSI Filter Logic Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        // 模拟测试场景
+        const testCases = [
+            { rsi: 65, expected: 'PASS' },
+            { rsi: 50, expected: 'PASS' },
+            { rsi: 49.9, expected: 'FILTER' },
+            { rsi: 40, expected: 'FILTER' },
+            { rsi: null, expected: 'FILTER' },
+            { rsi: undefined, expected: 'FILTER' },
+            { rsi: 0, expected: 'FILTER' }
+        ];
+        
+        let results = '<h2>Test Results:</h2>';
+        
+        testCases.forEach((test, index) => {
+            const maxHighRsi = test.rsi;
+            let result = 'UNKNOWN';
+            let reason = '';
+            
+            // 复制实际的过滤逻辑
+            if (maxHighRsi === null || maxHighRsi === undefined) {
+                result = 'FILTER';
+                reason = 'RSI数据缺失';
+            } else if (maxHighRsi < 50) {
+                result = 'FILTER';
+                reason = `RSI=${maxHighRsi} < 50`;
+            } else {
+                result = 'PASS';
+                reason = `RSI=${maxHighRsi} >= 50`;
+            }
+            
+            const status = result === test.expected ? '✅' : '❌';
+            results += `<p>${status} Test ${index + 1}: RSI=${test.rsi}, Expected=${test.expected}, Got=${result} (${reason})</p>`;
+        });
+        
+        document.getElementById('results').innerHTML = results;
+        console.log('RSI Filter Logic Test Completed');
+    </script>
+</body>
+</html>

@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>恐慌清洗指数 - 加密货币数据分析</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>恐慌清洗指数 - 加密货币数据分析 v2.1</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
         * {
@@ -123,11 +126,59 @@
             border-bottom: 1px solid #3a3d5c;
         }
         
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
         .chart-title {
             font-size: 16px;
             font-weight: 500;
-            margin-bottom: 15px;
             color: #fff;
+        }
+        
+        /* 分页控制器 */
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .page-btn {
+            background: #3a3d5c;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .page-btn:hover:not(:disabled) {
+            background: #4a4d6c;
+            transform: translateY(-2px);
+        }
+        
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .page-info {
+            color: #00d4ff;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 12px;
+            background: #1e2139;
+            border-radius: 6px;
+            border: 1px solid #3a3d5c;
         }
         
         #panicChart {
@@ -324,8 +375,25 @@
         
         <!-- 曲线图 -->
         <div class="chart-container">
-            <div class="chart-title">📈 恐慌清洗指数趋势</div>
+            <div class="chart-header">
+                <div class="chart-title">📈 恐慌清洗指数趋势 <span style="font-size: 12px; color: #00d4ff;">[v2.1]</span></div>
+                
+                <!-- 分页控制器（右上角） -->
+                <div class="pagination-controls">
+                    <button class="page-btn" id="prevPageBtn" onclick="loadPreviousPage()" title="查看更早的数据">
+                        <span>◀</span>
+                    </button>
+                    <div class="page-info" id="pageInfo">加载中...</div>
+                    <button class="page-btn" id="nextPageBtn" onclick="loadNextPage()" title="查看更新的数据">
+                        <span>▶</span>
+                    </button>
+                </div>
+            </div>
+            
             <div id="panicChart"></div>
+            <div id="debugInfo" style="font-size: 11px; color: #6b7280; margin-top: 10px; text-align: center;">
+                正在加载数据...
+            </div>
         </div>
         
         <!-- 历史数据表格 -->
@@ -383,6 +451,11 @@
     
     <script>
         let chart = null;
+        let currentPage = 0;  // 当前页码（0=最新12小时）
+        let allData = [];     // 所有历史数据
+        const HOURS_PER_PAGE = 12;  // 每页显示12小时
+        const RECORDS_PER_HOUR = 20;  // 每小时约20条记录（3分钟一次）
+        const RECORDS_PER_PAGE = HOURS_PER_PAGE * RECORDS_PER_HOUR;  // 每页约240条记录
         
         // 初始化图表
         function initChart() {
@@ -436,7 +509,9 @@
                         }
                     },
                     axisLabel: {
-                        color: '#8b92b8'
+                        color: '#8b92b8',
+                        rotate: 45,
+                        fontSize: 10
                     }
                 },
                 yAxis: [
@@ -544,7 +619,7 @@
         // 加载当前数据
         async function loadCurrentData() {
             try {
-                const response = await fetch('/api/panic/latest');
+                const response = await fetch('/api/panic/latest?_=' + Date.now());
                 const result = await response.json();
                 
                 if (result.success && result.data) {
@@ -569,44 +644,125 @@
             }
         }
         
-        // 加载历史数据并更新图表
-        async function loadHistoryData() {
+        // 加载全部历史数据
+        async function loadAllHistoryData() {
             try {
-                const conn = await fetch('/api/panic/history?limit=50');
+                // 加载更多数据以支持分页（例如最近7天的数据）
+                const conn = await fetch('/api/panic/history?limit=3000&_=' + Date.now());
                 const result = await conn.json();
                 
                 if (result.success && result.data && result.data.length > 0) {
-                    const data = result.data.reverse(); // 时间正序
+                    // 过滤掉包含0值的异常数据（API已按时间DESC排序，最新的在前）
+                    allData = result.data.filter(item => {
+                        return item.hour_1_amount > 0 && 
+                               item.hour_24_amount > 0 && 
+                               item.hour_24_people > 0 && 
+                               item.total_position > 0;
+                    }); // 保持API返回的顺序（最新的在前）
                     
-                    // 更新图表 - 添加两条曲线
-                    const times = data.map(item => item.record_time.split(' ')[1].substring(0, 5));
-                    const panicValues = data.map(item => item.panic_index.toFixed(2));
-                    const positionValues = data.map(item => item.total_position.toFixed(2));
+                    const debugMsg = `数据过滤完成: 总数据${result.data.length}条, 有效数据${allData.length}条`;
+                    console.log(debugMsg);
+                    document.getElementById('debugInfo').textContent = debugMsg + ' | 页面版本: v2.1';
+                    document.getElementById('debugInfo').style.color = '#10b981';
                     
-                    // 动态计算恐慌指数Y轴范围：最低-1%，最高+1%
-                    const panicNumbers = data.map(item => item.panic_index);
-                    const panicMin = Math.min(...panicNumbers);
-                    const panicMax = Math.max(...panicNumbers);
+                    if (allData.length === 0) {
+                        document.getElementById('debugInfo').textContent = '⚠️ 警告: 过滤后无有效数据！请检查数据采集。';
+                        document.getElementById('debugInfo').style.color = '#ef4444';
+                        console.error('No valid data after filtering!');
+                        return;
+                    }
                     
-                    // 恐慌指数：最低-1%，最高+1%
-                    const yAxisMin = Math.floor(panicMin) - 1;
-                    const yAxisMax = Math.ceil(panicMax) + 1;
-                    const yAxisInterval = 0.5;  // 固定0.5%刻度间隔
+                    updateChartForCurrentPage();
+                    updatePageInfo();
+                } else {
+                    document.getElementById('debugInfo').textContent = '❌ 数据加载失败或无数据';
+                    document.getElementById('debugInfo').style.color = '#ef4444';
+                }
+            } catch (error) {
+                console.error('加载历史数据失败:', error);
+                document.getElementById('debugInfo').textContent = '❌ 加载失败: ' + error.message;
+                document.getElementById('debugInfo').style.color = '#ef4444';
+            }
+        }
+        
+        // 更新图表显示当前页数据
+        function updateChartForCurrentPage() {
+            if (allData.length === 0) return;
+            
+            // allData现在是最新在前（DESC），需要反转用于图表显示（时间从左到右，旧到新）
+            const chartData = [...allData].reverse();
+            
+            // 计算当前页的数据范围
+            const totalRecords = chartData.length;
+            const startIndex = Math.max(0, totalRecords - (currentPage + 1) * RECORDS_PER_PAGE);
+            const endIndex = Math.max(0, totalRecords - currentPage * RECORDS_PER_PAGE);
+            
+            const pageData = chartData.slice(startIndex, endIndex);
+            
+            if (pageData.length === 0) return;
+            
+            // 提取图表数据
+            const times = pageData.map(item => {
+                const parts = item.record_time.split(' ');
+                return parts[1].substring(0, 5); // HH:MM
+            });
+            const panicValues = pageData.map(item => parseFloat(item.panic_index.toFixed(2)));
+            const positionValues = pageData.map(item => parseFloat(item.total_position.toFixed(2)));
                     
-                    // 动态计算全网持仓Y轴范围：最低-1亿，最高+1亿
-                    const positionNumbers = data.map(item => item.total_position);
-                    const positionMin = Math.min(...positionNumbers);
-                    const positionMax = Math.max(...positionNumbers);
-                    
-                    // 全网持仓：最低-1亿，最高+1亿
-                    const positionYMin = Math.floor(positionMin) - 1;
-                    const positionYMax = Math.ceil(positionMax) + 1;
-                    const positionYInterval = 0.5;  // 固定0.5亿刻度间隔
-                    
-                    chart.setOption({
-                        xAxis: {
-                            data: times
+            // 识别日期边界（用于绘制竖线）
+            const dateBoundaries = [];
+            let lastDate = null;
+            pageData.forEach((item, index) => {
+                const currentDate = item.record_time.split(' ')[0]; // YYYY-MM-DD
+                if (lastDate && currentDate !== lastDate) {
+                    dateBoundaries.push({
+                        xAxis: index,
+                        label: {
+                            show: true,
+                            formatter: currentDate,
+                            color: '#fbbf24',
+                            fontSize: 12,
+                            fontWeight: 'bold'
                         },
+                        lineStyle: {
+                            color: '#fbbf24',
+                            width: 2,
+                            type: 'solid'
+                        }
+                    });
+                }
+                lastDate = currentDate;
+            });
+            
+            // 动态计算恐慌指数Y轴范围：最低-1%，最高+1%
+            const panicNumbers = pageData.map(item => item.panic_index);
+            const panicMin = Math.min(...panicNumbers);
+            const panicMax = Math.max(...panicNumbers);
+                    
+            // 恐慌指数：最低-1%，最高+1%
+            const yAxisMin = Math.floor(panicMin) - 1;
+            const yAxisMax = Math.ceil(panicMax) + 1;
+            const yAxisInterval = 0.5;  // 固定0.5%刻度间隔
+            
+            // 动态计算全网持仓Y轴范围：最低-1亿，最高+1亿
+            const positionNumbers = pageData.map(item => item.total_position);
+            const positionMin = Math.min(...positionNumbers);
+            const positionMax = Math.max(...positionNumbers);
+                    
+            // 全网持仓：最低-1亿，最高+1亿
+            const positionYMin = Math.floor(positionMin) - 1;
+            const positionYMax = Math.ceil(positionMax) + 1;
+            const positionYInterval = 0.5;  // 固定0.5亿刻度间隔
+            
+            chart.setOption({
+                xAxis: {
+                    data: times
+                },
+                // 添加日期边界标记线
+                markLine: dateBoundaries.length > 0 ? {
+                    silent: true,
+                    data: dateBoundaries
+                } : undefined,
                         yAxis: [
                             {
                                 type: 'value',
@@ -657,23 +813,70 @@
                                 }
                             }
                         ],
-                        series: [
-                            {
-                                name: '恐慌清洗指数',
-                                data: panicValues
-                            },
-                            {
-                                name: '全网持仓量',
-                                data: positionValues
-                            }
-                        ]
-                    });
+                series: [
+                    {
+                        name: '恐慌清洗指数',
+                        data: panicValues,
+                        markLine: dateBoundaries.length > 0 ? {
+                            silent: true,
+                            symbol: 'none',
+                            data: dateBoundaries
+                        } : undefined
+                    },
+                    {
+                        name: '全网持仓量',
+                        data: positionValues
+                    }
+                ]
+            });
+        }
+        
+        // 更新分页信息
+        function updatePageInfo() {
+            const totalPages = Math.ceil(allData.length / RECORDS_PER_PAGE);
+            
+            // 简洁显示：第X页/共Y页
+            document.getElementById('pageInfo').textContent = `第 ${currentPage + 1} 页 / 共 ${totalPages} 页`;
+            
+            // 更新按钮状态
+            document.getElementById('prevPageBtn').disabled = (currentPage >= totalPages - 1);
+            document.getElementById('nextPageBtn').disabled = (currentPage <= 0);
+        }
+        
+        // 加载上一页（更早的数据）
+        function loadPreviousPage() {
+            const totalPages = Math.ceil(allData.length / RECORDS_PER_PAGE);
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                updateChartForCurrentPage();
+                updatePageInfo();
+            }
+        }
+        
+        // 加载下一页（更新的数据）
+        function loadNextPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                updateChartForCurrentPage();
+                updatePageInfo();
+            }
+        }
+        
+        // 加载历史数据并更新图表（保留用于表格显示）
+        async function loadHistoryData() {
+            try {
+                const conn = await fetch('/api/panic/history?limit=50');
+                const result = await conn.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    // API已按时间DESC排序，最新的在前，直接使用
+                    const data = result.data;
                     
                     // 更新表格
                     const tbody = document.getElementById('historyTableBody');
                     tbody.innerHTML = '';
                     
-                    result.data.forEach(item => {
+                    data.forEach(item => {
                         const tr = document.createElement('tr');
                         
                         let levelColor = 'green';
@@ -847,11 +1050,18 @@
         window.onload = function() {
             initChart();
             loadCurrentData();
-            loadHistoryData();
+            loadAllHistoryData();  // 加载全部数据用于图表分页
+            loadHistoryData();      // 加载最近50条用于表格
             load30DaysLiquidation();
             
             // 每30秒刷新当前数据
             setInterval(loadCurrentData, 30000);
+            
+            // 每3分钟刷新图表数据
+            setInterval(() => {
+                loadAllHistoryData();
+                loadHistoryData();
+            }, 180000);
         };
     </script>
 </body>

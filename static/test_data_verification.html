@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>数据验证测试</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1e2139; color: #fff; }
+        .section { margin: 20px 0; padding: 20px; background: #2a2d47; border-radius: 8px; }
+        h2 { color: #3b7dff; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #3a3d5c; }
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+        button { padding: 10px 20px; background: #3b7dff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+    <h1>🔍 实时数据验证测试</h1>
+    <p>此页面直接调用API显示原始数据，用于验证数据正确性</p>
+    <button onclick="loadData()">刷新数据</button>
+    
+    <div class="section">
+        <h2>📊 快照统计</h2>
+        <div id="stats"></div>
+    </div>
+    
+    <div class="section">
+        <h2>💰 币种数据（前10个）</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>币种</th>
+                    <th>涨跌%</th>
+                    <th>24h涨跌%</th>
+                    <th>急涨</th>
+                    <th>急跌</th>
+                    <th>当前价格</th>
+                </tr>
+            </thead>
+            <tbody id="coinTable"></tbody>
+        </table>
+    </div>
+    
+    <div class="section">
+        <h2>📝 原始JSON数据</h2>
+        <pre id="rawData" style="background: #1e2139; padding: 10px; border-radius: 4px; overflow: auto; max-height: 400px;"></pre>
+    </div>
+    
+    <script>
+        function loadData() {
+            fetch('/api/latest')
+                .then(r => r.json())
+                .then(data => {
+                    // 显示统计
+                    document.getElementById('stats').innerHTML = `
+                        <p><strong>快照时间:</strong> ${data.snapshot_time}</p>
+                        <p><strong>急涨:</strong> <span class="positive">${data.rush_up}</span> | <strong>急跌:</strong> <span class="negative">${data.rush_down}</span></p>
+                        <p><strong>状态:</strong> ${data.status}</p>
+                        <p><strong>计次:</strong> ${data.count}</p>
+                        <p><strong>24h涨≥10%:</strong> ${data.rise_24h_count || 0} | <strong>24h跌≤-10%:</strong> ${data.fall_24h_count || 0}</p>
+                    `;
+                    
+                    // 显示币种表格
+                    let tableHTML = '';
+                    data.coins.slice(0, 10).forEach(coin => {
+                        const changeClass = coin.change > 0 ? 'positive' : (coin.change < 0 ? 'negative' : '');
+                        const change24Class = coin.change_24h > 0 ? 'positive' : (coin.change_24h < 0 ? 'negative' : '');
+                        tableHTML += `
+                            <tr>
+                                <td><strong>${coin.symbol}</strong></td>
+                                <td class="${changeClass}">${coin.change.toFixed(2)}%</td>
+                                <td class="${change24Class}">${coin.change_24h.toFixed(2)}%</td>
+                                <td>${coin.rush_up}</td>
+                                <td>${coin.rush_down}</td>
+                                <td>$${coin.current_price.toFixed(4)}</td>
+                            </tr>
+                        `;
+                    });
+                    document.getElementById('coinTable').innerHTML = tableHTML;
+                    
+                    // 显示原始JSON
+                    document.getElementById('rawData').textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(err => {
+                    alert('加载失败: ' + err);
+                });
+        }
+        
+        // 页面加载时自动加载数据
+        loadData();
+    </script>
+</body>
+</html>

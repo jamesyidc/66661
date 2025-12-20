@@ -103,59 +103,210 @@ class CryptoIndexCollector:
             )
         ''')
         
+        # 创建指数位置表（用于存储4h/12h/24h/48h平均位置）
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS crypto_index_positions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL UNIQUE,
+                position_4h REAL DEFAULT 50.0,
+                position_12h REAL DEFAULT 50.0,
+                position_24h REAL DEFAULT 50.0,
+                position_48h REAL DEFAULT 50.0,
+                index_value REAL NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
         conn.commit()
         conn.close()
         logging.info("✅ 数据库初始化完成")
     
     def fetch_prices(self):
-        """从CoinGecko获取所有币种的当前价格"""
+        """从 OKX API 获取所有币种的当前价格（永续合约）"""
         try:
-            coin_ids = ','.join(COIN_WEIGHTS.keys())
-            params = {
-                'ids': coin_ids,
-                'vs_currencies': 'usd'
+            # 币种映射：CoinGecko ID -> OKX永续合约symbol
+            symbol_mapping = {
+                'bitcoin': 'BTC-USDT-SWAP',
+                'ethereum': 'ETH-USDT-SWAP',
+                'ripple': 'XRP-USDT-SWAP',
+                'binancecoin': 'BNB-USDT-SWAP',
+                'solana': 'SOL-USDT-SWAP',
+                'litecoin': 'LTC-USDT-SWAP',
+                'dogecoin': 'DOGE-USDT-SWAP',
+                'sui': 'SUI-USDT-SWAP',
+                'tron': 'TRX-USDT-SWAP',
+                'the-open-network': 'TON-USDT-SWAP',
+                'ethereum-classic': 'ETC-USDT-SWAP',
+                'bitcoin-cash': 'BCH-USDT-SWAP',
+                'hedera-hashgraph': 'HBAR-USDT-SWAP',
+                'stellar': 'XLM-USDT-SWAP',
+                'filecoin': 'FIL-USDT-SWAP',
+                'chainlink': 'LINK-USDT-SWAP',
+                'crypto-com-chain': 'CRO-USDT-SWAP',
+                'polkadot': 'DOT-USDT-SWAP',
+                'aave': 'AAVE-USDT-SWAP',
+                'uniswap': 'UNI-USDT-SWAP',
+                'near': 'NEAR-USDT-SWAP',
+                'aptos': 'APT-USDT-SWAP',
+                'conflux-token': 'CFX-USDT-SWAP',
+                'curve-dao-token': 'CRV-USDT-SWAP',
+                'stacks': 'STX-USDT-SWAP',
+                'lido-dao': 'LDO-USDT-SWAP',
+                'bittensor': 'TAO-USDT-SWAP'
             }
             
-            response = requests.get(COINGECKO_API_URL, params=params, timeout=10)
-            response.raise_for_status()
-            data = response.json()
-            
+            # 从OKX API逐个获取价格（使用ticker接口）
             prices = {}
-            for coin_id in COIN_WEIGHTS.keys():
-                if coin_id in data and 'usd' in data[coin_id]:
-                    prices[coin_id] = data[coin_id]['usd']
-                else:
-                    logging.warning(f"⚠️  未获取到 {coin_id} 的价格")
+            for coin_id, okx_symbol in symbol_mapping.items():
+                try:
+                    url = f'https://www.okx.com/api/v5/market/ticker?instId={okx_symbol}'
+                    response = requests.get(url, timeout=5)
+                    response.raise_for_status()
+                    data = response.json()
+                    
+                    if data['code'] == '0' and data['data']:
+                        # OKX ticker返回格式: {'data': [{'last': '89000', ...}]}
+                        last_price = float(data['data'][0]['last'])
+                        prices[coin_id] = last_price
+                    else:
+                        logging.warning(f"⚠️  {coin_id} OKX API返回错误: {data.get('msg')}")
+                        
+                except Exception as e:
+                    logging.warning(f"⚠️  获取 {coin_id} 价格失败: {str(e)}")
+                    continue
             
-            logging.info(f"✅ 成功获取 {len(prices)}/27 个币种价格")
-            return prices
+            logging.info(f"✅ 成功获取 {len(prices)}/27 个币种价格（从 OKX API）")
+            return prices if len(prices) > 0 else None
             
         except Exception as e:
             logging.error(f"❌ 获取价格失败: {str(e)}")
             return None
     
     def load_base_prices(self):
-        """加载基准价格"""
+        """加载今日基准价格（北京时间0点）"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        cursor.execute("SELECT coin_id, base_price FROM crypto_index_base_prices")
-        rows = cursor.fetchall()
+        # 获取今天的日期（北京时间）
+        beijing_now = datetime.now(BEIJING_TZ)
+        today_date = beijing_now.date().isoformat()
         
-        if rows:
-            base_prices = {row[0]: row[1] for row in rows}
-            conn.close()
-            logging.info(f"✅ 加载基准价格: {len(base_prices)} 个币种")
-            return base_prices
+        # 币种ID到symbol的映射（用于查询daily_baseline_prices表）
+        coin_to_symbol = {
+            'bitcoin': 'BTCUSDT',
+            'ethereum': 'ETHUSDT',
+            'ripple': 'XRPUSDT',
+            'binancecoin': 'BNBUSDT',
+            'solana': 'SOLUSDT',
+            'litecoin': 'LTCUSDT',
+            'dogecoin': 'DOGEUSDT',
+            'sui': 'SUIUSDT',
+            'tron': 'TRXUSDT',
+            'the-open-network': 'TONUSDT',
+            'ethereum-classic': 'ETCUSDT',
+            'bitcoin-cash': 'BCHUSDT',
+            'hedera-hashgraph': 'HBARUSDT',
+            'stellar': 'XLMUSDT',
+            'filecoin': 'FILUSDT',
+            'chainlink': 'LINKUSDT',
+            'crypto-com-chain': 'CROUSDT',
+            'polkadot': 'DOTUSDT',
+            'aave': 'AAVEUSDT',
+            'uniswap': 'UNIUSDT',
+            'near': 'NEARUSDT',
+            'aptos': 'APTUSDT',
+            'conflux-token': 'CFXUSDT',
+            'curve-dao-token': 'CRVUSDT',
+            'stacks': 'STXUSDT',
+            'lido-dao': 'LDOUSDT',
+            'bittensor': 'TAOUSDT'
+        }
+        
+        # 从daily_baseline_prices表读取今日基准价格
+        base_prices = {}
+        for coin_id, symbol in coin_to_symbol.items():
+            cursor.execute('''
+                SELECT baseline_price FROM daily_baseline_prices
+                WHERE symbol = ? AND baseline_date = ?
+            ''', (symbol, today_date))
+            row = cursor.fetchone()
+            if row:
+                base_prices[coin_id] = row[0]
         
         conn.close()
-        return None
+        
+        if base_prices:
+            logging.info(f"✅ 加载今日基准价格（{today_date}）: {len(base_prices)} 个币种")
+            return base_prices
+        else:
+            logging.warning(f"⚠️  未找到今日基准价格，尝试从crypto_index_base_prices加载")
+            # 回退：从旧表加载
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT coin_id, base_price FROM crypto_index_base_prices")
+            rows = cursor.fetchall()
+            conn.close()
+            if rows:
+                return {row[0]: row[1] for row in rows}
+            return None
     
     def save_base_prices(self, prices):
-        """保存基准价格（首次运行时）"""
+        """保存今日基准价格（北京时间0点）"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
+        # 获取今天的日期（北京时间）
+        beijing_now = datetime.now(BEIJING_TZ)
+        today_date = beijing_now.date().isoformat()
+        baseline_time = beijing_now.strftime('%Y-%m-%d 00:00:00')
+        
+        # 币种ID到symbol的映射
+        coin_to_symbol = {
+            'bitcoin': 'BTCUSDT',
+            'ethereum': 'ETHUSDT',
+            'ripple': 'XRPUSDT',
+            'binancecoin': 'BNBUSDT',
+            'solana': 'SOLUSDT',
+            'litecoin': 'LTCUSDT',
+            'dogecoin': 'DOGEUSDT',
+            'sui': 'SUIUSDT',
+            'tron': 'TRXUSDT',
+            'the-open-network': 'TONUSDT',
+            'ethereum-classic': 'ETCUSDT',
+            'bitcoin-cash': 'BCHUSDT',
+            'hedera-hashgraph': 'HBARUSDT',
+            'stellar': 'XLMUSDT',
+            'filecoin': 'FILUSDT',
+            'chainlink': 'LINKUSDT',
+            'crypto-com-chain': 'CROUSDT',
+            'polkadot': 'DOTUSDT',
+            'aave': 'AAVEUSDT',
+            'uniswap': 'UNIUSDT',
+            'near': 'NEARUSDT',
+            'aptos': 'APTUSDT',
+            'conflux-token': 'CFXUSDT',
+            'curve-dao-token': 'CRVUSDT',
+            'stacks': 'STXUSDT',
+            'lido-dao': 'LDOUSDT',
+            'bittensor': 'TAOUSDT'
+        }
+        
+        # 保存到daily_baseline_prices表
+        count = 0
+        for coin_id, price in prices.items():
+            symbol = coin_to_symbol.get(coin_id)
+            if symbol:
+                try:
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO daily_baseline_prices 
+                        (symbol, baseline_date, baseline_price, baseline_time)
+                        VALUES (?, ?, ?, ?)
+                    ''', (symbol, today_date, price, baseline_time))
+                    count += 1
+                except Exception as e:
+                    logging.warning(f"⚠️  保存 {symbol} 基准价格失败: {e}")
+        
+        # 同时保存到crypto_index_base_prices表（用于向后兼容）
         for coin_id, price in prices.items():
             weight = COIN_WEIGHTS.get(coin_id, 0)
             cursor.execute('''
@@ -165,7 +316,7 @@ class CryptoIndexCollector:
         
         conn.commit()
         conn.close()
-        logging.info(f"✅ 保存基准价格: {len(prices)} 个币种")
+        logging.info(f"✅ 保存今日基准价格（{today_date}）: {count} 个币种")
     
     def calculate_index(self, current_prices, base_prices):
         """
@@ -186,42 +337,47 @@ class CryptoIndexCollector:
         return round(index_value, 2)
     
     def collect_kline_data(self):
-        """采集5分钟K线数据"""
+        """采集5分钟K线数据 - 在5分钟内采集多个点计算真实OHLC"""
         try:
-            # 获取当前价格
-            current_prices = self.fetch_prices()
-            if not current_prices or len(current_prices) < 20:  # 至少要有20个币种有价格
-                logging.error(f"❌ 价格数据不足: {len(current_prices) if current_prices else 0}/27")
-                return False
+            # 每次都重新加载基准价格（确保使用最新的每日基准）
+            self.base_prices = self.load_base_prices()
             
-            # 加载或初始化基准价格
             if self.base_prices is None:
-                self.base_prices = self.load_base_prices()
-                
-                if self.base_prices is None:
-                    # 首次运行，设置当前价格为基准价格
-                    self.save_base_prices(current_prices)
-                    self.base_prices = current_prices
-                    logging.info("🎯 首次运行，设置基准价格")
+                # 首次运行，设置当前价格为基准价格
+                current_prices = self.fetch_prices()
+                if not current_prices or len(current_prices) < 20:
+                    logging.error(f"❌ 价格数据不足: {len(current_prices) if current_prices else 0}/27")
+                    return False
+                self.save_base_prices(current_prices)
+                self.base_prices = current_prices
+                logging.info("🎯 首次运行，设置基准价格")
             
-            # 计算当前指数值
-            index_value = self.calculate_index(current_prices, self.base_prices)
-            if index_value is None:
-                logging.error("❌ 指数计算失败")
+            # 在5分钟内采集多个数据点（每30秒采集一次，共10个点）
+            index_values = []
+            for i in range(10):
+                current_prices = self.fetch_prices()
+                if current_prices and len(current_prices) >= 20:
+                    index_value = self.calculate_index(current_prices, self.base_prices)
+                    if index_value:
+                        index_values.append(index_value)
+                
+                if i < 9:  # 最后一次不需要等待
+                    time.sleep(30)  # 等待30秒
+            
+            if not index_values:
+                logging.error("❌ 未能采集到有效的指数数据")
                 return False
             
-            # 获取5分钟时间窗口的数据（这里简化处理，实际应该收集5分钟内的tick数据）
-            # 由于我们每5分钟采集一次，open=close=index_value, high/low也近似为index_value
-            # 如果需要更精确的OHLC，需要在5分钟内多次采集
+            # 计算OHLC
+            open_price = index_values[0]      # 开盘价：第一个值
+            close_price = index_values[-1]    # 收盘价：最后一个值
+            high_price = max(index_values)     # 最高价：最大值
+            low_price = min(index_values)      # 最低价：最小值
+            index_value = close_price           # 指数值使用收盘价
+            
+            # 生成时间戳（对齐到5分钟）
             now = datetime.now(BEIJING_TZ)
             timestamp = now.strftime('%Y-%m-%d %H:%M:00')
-            
-            # 简化版：open/high/low/close都使用当前值
-            # TODO: 改进为在5分钟内采集多个点来计算真实的OHLC
-            open_price = index_value
-            high_price = index_value
-            low_price = index_value
-            close_price = index_value
             
             # 保存K线数据
             conn = sqlite3.connect(self.db_path)
@@ -234,9 +390,14 @@ class CryptoIndexCollector:
             ''', (timestamp, open_price, high_price, low_price, close_price, index_value))
             
             conn.commit()
+            
+            # 计算并保存平均位置
+            self.calculate_average_positions(cursor, timestamp, index_value)
+            
+            conn.commit()
             conn.close()
             
-            logging.info(f"✅ 指数采集成功: {timestamp} | 指数值: {index_value:.2f}")
+            logging.info(f"✅ 指数K线采集成功: {timestamp} | O:{open_price:.2f} H:{high_price:.2f} L:{low_price:.2f} C:{close_price:.2f}")
             return True
             
         except Exception as e:
@@ -244,6 +405,59 @@ class CryptoIndexCollector:
             import traceback
             logging.error(traceback.format_exc())
             return False
+    
+    def calculate_average_positions(self, cursor, timestamp, current_value):
+        """
+        计算4小时、12小时、24小时、48小时的平均位置
+        
+        位置 = (当前值 - 周期最低) / (周期最高 - 周期最低) * 100
+        """
+        try:
+            periods = {
+                '4h': 4 * 12,    # 4小时 = 48个5分钟K线
+                '12h': 12 * 12,  # 12小时 = 144个5分钟K线
+                '24h': 24 * 12,  # 24小时 = 288个5分钟K线
+                '48h': 48 * 12   # 48小时 = 576个5分钟K线
+            }
+            
+            positions = {}
+            for period_name, kline_count in periods.items():
+                # 获取周期内的最高价和最低价
+                cursor.execute('''
+                    SELECT MAX(high_price), MIN(low_price)
+                    FROM (
+                        SELECT high_price, low_price
+                        FROM crypto_index_klines
+                        ORDER BY timestamp DESC
+                        LIMIT ?
+                    )
+                ''', (kline_count,))
+                
+                row = cursor.fetchone()
+                if row and row[0] and row[1]:
+                    period_high = row[0]
+                    period_low = row[1]
+                    
+                    if period_high > period_low:
+                        position = ((current_value - period_low) / (period_high - period_low)) * 100
+                        positions[period_name] = round(position, 2)
+                    else:
+                        positions[period_name] = 50.0  # 如果最高=最低，默认50%
+                else:
+                    positions[period_name] = 50.0  # 数据不足，默认50%
+            
+            # 保存到数据库
+            cursor.execute('''
+                INSERT OR REPLACE INTO crypto_index_positions
+                (timestamp, position_4h, position_12h, position_24h, position_48h, index_value)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (timestamp, positions.get('4h', 50.0), positions.get('12h', 50.0),
+                  positions.get('24h', 50.0), positions.get('48h', 50.0), current_value))
+            
+            logging.info(f"📊 平均位置: 4h={positions.get('4h', 50.0):.1f}% 12h={positions.get('12h', 50.0):.1f}% 24h={positions.get('24h', 50.0):.1f}% 48h={positions.get('48h', 50.0):.1f}%")
+            
+        except Exception as e:
+            logging.error(f"❌ 计算平均位置失败: {str(e)}")
     
     def run_daemon(self, interval=300):
         """

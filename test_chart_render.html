@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>K线图渲染测试</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 20px;
+            background: #0e1117;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #test-chart { 
+            width: 100%; 
+            height: 600px; 
+            background: #1a1d29;
+            border: 2px solid #00d4aa;
+        }
+        .info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #1a1d29;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h2>K线图渲染测试 - BTC</h2>
+        <div id="status">正在加载数据...</div>
+    </div>
+    <div id="test-chart"></div>
+    
+    <script>
+        const chart = echarts.init(document.getElementById('test-chart'));
+        const statusEl = document.getElementById('status');
+        
+        async function loadData() {
+            try {
+                statusEl.textContent = '正在获取K线数据...';
+                const klineRes = await fetch('/api/symbol/BTC/kline?timeframe=5m');
+                const klineData = await klineRes.json();
+                
+                statusEl.textContent = '正在获取指标数据...';
+                const indRes = await fetch('/api/symbol/BTC/indicators?timeframe=5m');
+                const indData = await indRes.json();
+                
+                if (!klineData.success || !indData.success) {
+                    statusEl.textContent = '❌ 数据加载失败';
+                    return;
+                }
+                
+                // 取最后144条数据（12小时）
+                const klines = klineData.data.slice(-144);
+                const indicators = indData.data.slice(-144);
+                
+                statusEl.textContent = `✓ 数据加载成功: ${klines.length}条K线, ${indicators.length}条指标`;
+                
+                // 准备数据
+                const times = klines.map(item => {
+                    const date = new Date(item.timestamp);
+                    return date.toLocaleString('zh-CN', { 
+                        month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit' 
+                    });
+                });
+                
+                const ohlc = klines.map(item => item.data);
+                const volumes = klines.map(item => item.volume);
+                const sar = indicators.map(item => item.sar);
+                const bbUpper = indicators.map(item => item.bb_upper);
+                const bbMiddle = indicators.map(item => item.bb_middle);
+                const bbLower = indicators.map(item => item.bb_lower);
+                
+                // 配置图表
+                const option = {
+                    backgroundColor: 'transparent',
+                    title: {
+                        text: 'BTC K线图 + SAR + 布林带',
+                        left: 'center',
+                        textStyle: { color: '#fff' }
+                    },
+                    legend: {
+                        data: ['K线', '布林上轨', '布林中轨', '布林下轨', 'SAR', '成交量'],
+                        top: '8%',
+                        textStyle: { color: '#888' }
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'cross' },
+                        backgroundColor: 'rgba(26, 29, 41, 0.95)',
+                        borderColor: '#2d3348',
+                        textStyle: { color: '#e0e0e0' }
+                    },
+                    grid: [
+                        { left: '5%', right: '3%', top: '15%', height: '60%' },
+                        { left: '5%', right: '3%', top: '80%', height: '15%' }
+                    ],
+                    xAxis: [
+                        {
+                            type: 'category',
+                            data: times,
+                            gridIndex: 0,
+                            axisLabel: { 
+                                color: '#888',
+                                interval: 11
+                            }
+                        },
+                        {
+                            type: 'category',
+                            data: times,
+                            gridIndex: 1,
+                            axisLabel: { show: false }
+                        }
+                    ],
+                    yAxis: [
+                        {
+                            scale: true,
+                            gridIndex: 0,
+                            splitLine: { lineStyle: { color: '#2d3348' } },
+                            axisLabel: { color: '#888' }
+                        },
+                        {
+                            scale: true,
+                            gridIndex: 1,
+                            splitLine: { show: false },
+                            axisLabel: { color: '#888' }
+                        }
+                    ],
+                    series: [
+                        {
+                            name: 'K线',
+                            type: 'candlestick',
+                            data: ohlc,
+                            xAxisIndex: 0,
+                            yAxisIndex: 0,
+                            itemStyle: {
+                                color: '#00d4aa',
+                                color0: '#ff4444',
+                                borderColor: '#00d4aa',
+                                borderColor0: '#ff4444'
+                            }
+                        },
+                        {
+                            name: '布林上轨',
+                            type: 'line',
+                            data: bbUpper,
+                            xAxisIndex: 0,
+                            yAxisIndex: 0,
+                            smooth: true,
+                            lineStyle: { color: '#f39c12', width: 1, type: 'dashed' },
+                            showSymbol: false
+                        },
+                        {
+                            name: '布林中轨',
+                            type: 'line',
+                            data: bbMiddle,
+                            xAxisIndex: 0,
+                            yAxisIndex: 0,
+                            smooth: true,
+                            lineStyle: { color: '#3498db', width: 1.5 },
+                            showSymbol: false
+                        },
+                        {
+                            name: '布林下轨',
+                            type: 'line',
+                            data: bbLower,
+                            xAxisIndex: 0,
+                            yAxisIndex: 0,
+                            smooth: true,
+                            lineStyle: { color: '#f39c12', width: 1, type: 'dashed' },
+                            showSymbol: false
+                        },
+                        {
+                            name: 'SAR',
+                            type: 'scatter',
+                            data: sar,
+                            xAxisIndex: 0,
+                            yAxisIndex: 0,
+                            symbol: 'circle',
+                            symbolSize: 4,
+                            itemStyle: {
+                                color: function(params) {
+                                    const sarValue = params.value;
+                                    const closePrice = ohlc[params.dataIndex][1];
+                                    return sarValue < closePrice ? '#00d4aa' : '#ff4444';
+                                }
+                            }
+                        },
+                        {
+                            name: '成交量',
+                            type: 'bar',
+                            data: volumes,
+                            xAxisIndex: 1,
+                            yAxisIndex: 1,
+                            itemStyle: {
+                                color: function(params) {
+                                    const idx = params.dataIndex;
+                                    const isUp = ohlc[idx][1] >= ohlc[idx][0];
+                                    return isUp ? 'rgba(0, 212, 170, 0.5)' : 'rgba(255, 68, 68, 0.5)';
+                                }
+                            }
+                        }
+                    ]
+                };
+                
+                chart.setOption(option);
+                statusEl.textContent += ' | ✓ 图表渲染完成';
+                
+                console.log('图表数据:', {
+                    times: times.length,
+                    ohlc: ohlc.length,
+                    sar: sar.length,
+                    bbUpper: bbUpper.length,
+                    firstOhlc: ohlc[0],
+                    firstSar: sar[0],
+                    firstBbUpper: bbUpper[0]
+                });
+                
+            } catch (error) {
+                statusEl.textContent = '❌ 错误: ' + error.message;
+                console.error(error);
+            }
+        }
+        
+        window.addEventListener('resize', () => chart.resize());
+        loadData();
+    </script>
+</body>
+</html>

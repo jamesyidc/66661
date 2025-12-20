@@ -74,6 +74,61 @@ MODULES_CONFIG = {
         'depends_on': 'crypto_snapshots',  # 依赖crypto_snapshots
         'icon': '⭐',
         'description': '实时计算，依赖历史数据查询（间隔10分钟）'
+    },
+    'position_system': {
+        'name': '位置系统',
+        'page_url': '/',
+        'table': 'position_system',
+        'time_column': 'record_time',
+        'expected_interval': 5,  # 预期更新间隔（分钟）
+        'max_delay': 10,  # 最大允许延迟（分钟）
+        'trigger_script': None,  # PM2管理的持续运行采集器
+        'icon': '📍',
+        'description': '间隔5分钟，超过10分钟干预（PM2管理）'
+    },
+    'crypto_index_klines': {
+        'name': '加密指数',
+        'page_url': '/crypto-index',
+        'table': 'crypto_index_klines',
+        'time_column': 'timestamp',
+        'expected_interval': 5,  # 预期更新间隔（分钟）
+        'max_delay': 10,  # 最大允许延迟（分钟）
+        'trigger_script': None,  # PM2管理的持续运行采集器
+        'icon': '📊',
+        'description': '间隔5分钟，超过10分钟干预（PM2管理）'
+    },
+    'volume_btc': {
+        'name': 'V1V2信号',
+        'page_url': '/',
+        'table': 'volume_btc',
+        'time_column': 'created_at',
+        'expected_interval': 1,  # 预期更新间隔（分钟）
+        'max_delay': 5,  # 最大允许延迟（分钟）
+        'trigger_script': None,  # PM2管理的持续运行采集器
+        'icon': '📡',
+        'description': '间隔1分钟，超过5分钟干预（PM2管理）'
+    },
+    'latest_price_speed': {
+        'name': '价格速度',
+        'page_url': '/',
+        'table': 'latest_price_speed',
+        'time_column': 'timestamp',
+        'expected_interval': 0.5,  # 预期更新间隔（分钟）30秒
+        'max_delay': 5,  # 最大允许延迟（分钟）
+        'trigger_script': None,  # PM2管理的持续运行采集器
+        'icon': '⚡',
+        'description': '间隔30秒，超过5分钟干预（PM2管理）'
+    },
+    'okex_technical_indicators': {
+        'name': 'K线指标系统',
+        'page_url': '/',
+        'table': 'okex_technical_indicators',
+        'time_column': 'record_time',
+        'expected_interval': 1,  # 预期更新间隔（分钟）
+        'max_delay': 10,  # 最大允许延迟（分钟）
+        'trigger_script': None,  # WebSocket实时采集器
+        'icon': '📈',
+        'description': '实时更新，超过10分钟干预（WebSocket管理）'
     }
 }
 

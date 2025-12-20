@@ -34,7 +34,9 @@ class SignalCollector:
     
     def init_database(self):
         """初始化数据库表"""
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        conn.execute('PRAGMA journal_mode=WAL')
+        conn.execute('PRAGMA busy_timeout=30000')
         cursor = conn.cursor()
         
         cursor.execute('''
@@ -128,7 +130,8 @@ class SignalCollector:
     def get_last_signal(self):
         """获取最后一条信号记录"""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.db_path, timeout=30.0)
+            conn.execute('PRAGMA busy_timeout=30000')
             cursor = conn.cursor()
             
             cursor.execute('''
@@ -203,7 +206,8 @@ class SignalCollector:
             record_time = now.strftime('%Y-%m-%d %H:%M:%S')
             record_date = now.strftime('%Y-%m-%d')
             
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.db_path, timeout=30.0)
+            conn.execute('PRAGMA busy_timeout=30000')
             cursor = conn.cursor()
             
             cursor.execute('''

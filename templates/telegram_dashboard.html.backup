@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram信号推送系统 - 监控面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        h1 {
+            color: #764ba2;
+            font-size: 28px;
+        }
+        
+        .status-badge {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .status-badge.running {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status-badge.stopped {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .stat-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #764ba2;
+        }
+        
+        .signal-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .signal-type-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .signal-type-card h4 {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .signal-type-card .count {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        select, button {
+            padding: 10px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        select:focus, button:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .history-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .history-table tr:hover {
+            background: #f9fafb;
+        }
+        
+        .signal-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .signal-badge.support-resistance {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .signal-badge.trading-signals {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .signal-badge.v6-signals {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .signal-badge.count-alerts {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .pagination button {
+            padding: 8px 16px;
+            min-width: 40px;
+        }
+        
+        .pagination button.active {
+            background: #764ba2;
+        }
+        
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 16px;
+        }
+        
+        .refresh-info {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-button">← 返回首页</a>
+        
+        <div class="header">
+            <h1>🤖 Telegram信号推送系统</h1>
+            <div id="statusBadge" class="status-badge">加载中...</div>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>📊 总发送数</h3>
+                <div class="value" id="totalSent">--</div>
+            </div>
+            <div class="stat-card">
+                <h3>⏰ 最近1小时</h3>
+                <div class="value" id="sent1h">--</div>
+            </div>
+            <div class="stat-card">
+                <h3>📅 今日发送</h3>
+                <div class="value" id="sentToday">--</div>
+            </div>
+            <div class="stat-card">
+                <h3>🕐 最后发送</h3>
+                <div class="value" id="lastSent" style="font-size: 16px;">--</div>
+            </div>
+        </div>
+        
+        <!-- 信号类型统计 -->
+        <h2 style="color: #764ba2; margin-bottom: 15px;">📈 信号类型统计</h2>
+        <div class="signal-types" id="signalTypes">
+            <div class="loading">加载中...</div>
+        </div>
+        
+        <!-- 历史记录 -->
+        <h2 style="color: #764ba2; margin-bottom: 15px; margin-top: 30px;">📜 发送历史</h2>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label>信号类型:</label>
+                <select id="filterType">
+                    <option value="">全部</option>
+                    <option value="support_resistance">支撑压力线</option>
+                    <option value="count_alerts">计次预警</option>
+                    <option value="trading_signals">交易信号</option>
+                    <option value="v6_signals">买点4</option>
+                </select>
+            </div>
+            <button onclick="loadHistory()">🔍 筛选</button>
+            <button onclick="loadStatus(); loadHistory();">🔄 刷新</button>
+        </div>
+        
+        <div id="historyContainer">
+            <div class="loading">加载中...</div>
+        </div>
+        
+        <div class="pagination" id="pagination"></div>
+        
+        <div class="refresh-info">
+            页面每30秒自动刷新 | Bot: @jamesyi9999_bot | 频道ID: -1003227444260
+        </div>
+    </div>
+    
+    <script>
+        let currentPage = 1;
+        let autoRefreshTimer = null;
+        
+        // 加载状态
+        async function loadStatus() {
+            try {
+                const response = await fetch('/api/telegram/status?_=' + Date.now());
+                const data = await response.json();
+                
+                if (data.success) {
+                    const statusBadge = document.getElementById('statusBadge');
+                    if (data.data.is_running) {
+                        statusBadge.textContent = '✅ 运行中 (PID: ' + data.data.pid + ')';
+                        statusBadge.className = 'status-badge running';
+                    } else {
+                        statusBadge.textContent = '❌ 未运行';
+                        statusBadge.className = 'status-badge stopped';
+                    }
+                    
+                    const stats = data.data.database_stats;
+                    document.getElementById('totalSent').textContent = stats.total_sent || 0;
+                    document.getElementById('sent1h').textContent = stats.sent_1h || 0;
+                    document.getElementById('sentToday').textContent = stats.sent_today || 0;
+                    document.getElementById('lastSent').textContent = stats.last_sent_time || '--';
+                    
+                    // 渲染信号类型统计
+                    renderSignalTypes(stats.signal_counts || {});
+                }
+            } catch (error) {
+                console.error('加载状态失败:', error);
+            }
+        }
+        
+        // 渲染信号类型统计
+        function renderSignalTypes(signalCounts) {
+            const container = document.getElementById('signalTypes');
+            
+            const types = {
+                'support_resistance': '支撑压力线',
+                'count_alerts': '计次预警',
+                'trading_signals': '交易信号',
+                'v6_signals': '买点4'
+            };
+            
+            let html = '';
+            for (const [key, name] of Object.entries(types)) {
+                const count = signalCounts[key] || 0;
+                html += `
+                    <div class="signal-type-card">
+                        <h4>${name}</h4>
+                        <div class="count">${count}</div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html || '<div class="no-data">暂无数据</div>';
+        }
+        
+        // 加载历史记录
+        async function loadHistory(page = 1) {
+            try {
+                currentPage = page;
+                const filterType = document.getElementById('filterType').value;
+                
+                const url = `/api/telegram/history?page=${page}&limit=20&type=${filterType}&_=${Date.now()}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderHistory(data.data.records);
+                    renderPagination(data.data.page, data.data.pages);
+                } else {
+                    document.getElementById('historyContainer').innerHTML = 
+                        '<div class="no-data">❌ 加载失败: ' + data.error + '</div>';
+                }
+            } catch (error) {
+                console.error('加载历史失败:', error);
+                document.getElementById('historyContainer').innerHTML = 
+                    '<div class="no-data">❌ 网络错误，请稍后重试</div>';
+            }
+        }
+        
+        // 渲染历史记录表格
+        function renderHistory(records) {
+            const container = document.getElementById('historyContainer');
+            
+            if (!records || records.length === 0) {
+                container.innerHTML = '<div class="no-data">暂无历史记录</div>';
+                return;
+            }
+            
+            const typeNames = {
+                'support_resistance': '支撑压力线',
+                'count_alerts': '计次预警',
+                'trading_signals': '交易信号',
+                'v6_signals': '买点4'
+            };
+            
+            let html = `
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>信号类型</th>
+                            <th>币种</th>
+                            <th>信号名称</th>
+                            <th>发送时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            records.forEach(record => {
+                const typeName = typeNames[record.signal_type] || record.signal_type;
+                const typeClass = record.signal_type.replace('_', '-');
+                
+                html += `
+                    <tr>
+                        <td>${record.id}</td>
+                        <td><span class="signal-badge ${typeClass}">${typeName}</span></td>
+                        <td><strong>${record.symbol || '--'}</strong></td>
+                        <td>${record.signal_name}</td>
+                        <td>${record.sent_time}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        // 渲染分页
+        function renderPagination(currentPage, totalPages) {
+            const container = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = `
+                <button onclick="loadHistory(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    ← 上一页
+                </button>
+            `;
+            
+            // 显示页码
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <button onclick="loadHistory(${i})" class="${i === currentPage ? 'active' : ''}">
+                        ${i}
+                    </button>
+                `;
+            }
+            
+            html += `
+                <button onclick="loadHistory(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    下一页 →
+                </button>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        // 启动自动刷新
+        function startAutoRefresh() {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
+            
+            autoRefreshTimer = setInterval(() => {
+                loadStatus();
+                loadHistory(currentPage);
+            }, 30000); // 30秒刷新一次
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStatus();
+            loadHistory(1);
+            startAutoRefresh();
+        });
+    </script>
+</body>
+</html>

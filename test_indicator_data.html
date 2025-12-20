@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Indicator Data Display</title>
+</head>
+<body>
+    <h1>Testing Indicator Data</h1>
+    <div id="result"></div>
+    <pre id="debug"></pre>
+    
+    <script>
+        fetch('/api/kline-indicators/latest?timeframe=5m')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('debug').textContent = JSON.stringify(data, null, 2);
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    const first = data.data[0];
+                    let html = '<h2>First Item Data:</h2>';
+                    html += '<table border="1">';
+                    html += '<tr><th>Field</th><th>Value</th><th>Type</th></tr>';
+                    for (let key in first) {
+                        html += `<tr><td>${key}</td><td>${first[key]}</td><td>${typeof first[key]}</td></tr>`;
+                    }
+                    html += '</table>';
+                    
+                    document.getElementById('result').innerHTML = html;
+                } else {
+                    document.getElementById('result').innerHTML = '<p>No data or error</p>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = '<p>Error: ' + error + '</p>';
+            });
+    </script>
+</body>
+</html>

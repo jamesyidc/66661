@@ -1,264 +1,398 @@
-# 功能实现总结
+# ✨ 功能完成总结
 
-## ✅ 已完成的三大核心功能
+## 🎯 用户需求
+> "更新父文件夹id，你把新的父文件夹id重新做一个框显示，单数日期和双数日期，这样分两个框显示父文件夹id"
 
-### 1. 按日期+时间查询历史数据
+---
 
-**特点：**
-- ✅ 无需设置开始/结束时间，直接输入查询时间即可
-- ✅ 支持多种日期格式：
-  - `2025-12-06 13:30`
-  - `2025-12-06_1330`
-  - `2025-12-06 13`
-- ✅ 显示完整的币种信息和优先级
-- ✅ 包含所有关键指标：急涨、急跌、差值、计次、比值、状态
+## ✅ 已完成功能
 
-**使用方法：**
+### 1. 双框显示系统 📦📦
+
+#### 视觉效果
+```
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 1️⃣  单数日期父文件夹              ┃  ┃ 2️⃣  双数日期父文件夹              ┃
+┃                                  ┃  ┃                                  ┃
+┃ 1, 3, 5, 7, 9, 11, 13, 15...    ┃  ┃ 2, 4, 6, 8, 10, 12, 14, 16...    ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫  ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ Folder ID:                       ┃  ┃ Folder ID:                       ┃
+┃ ╔════════════════════════════╗   ┃  ┃ ╔════════════════════════════╗   ┃
+┃ ║1jFGGlGP5KEVhAxpCNxFIYEFI5-c║   ┃  ┃ ║1jFGGlGP5KEVhAxpCNxFIYEFI5-c║   ┃
+┃ ║DOBJM                       ║   ┃  ┃ ║DOBJM                       ║   ┃
+┃ ╚════════════════════════════╝   ┃  ┃ ╚════════════════════════════╝   ┃
+┃                                  ┃  ┃                                  ┃
+┃        ┌─────────────────┐       ┃  ┃        ┌──────────────┐          ┃
+┃        │ ✅ 今天使用     │       ┃  ┃        │ 📂 备用      │          ┃
+┃        └─────────────────┘       ┃  ┃        └──────────────┘          ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+     🔵 蓝色渐变 + 蓝色边框                 🟣 紫色渐变 + 紫色边框
+```
+
+#### 特性
+- ✅ **两个独立的显示框**
+- ✅ **清晰的日期范围标注**
+- ✅ **大号图标** (1️⃣ 和 2️⃣)
+- ✅ **渐变背景**（蓝色和紫色）
+- ✅ **Folder ID 显示区域**（等宽字体）
+- ✅ **状态徽章**（今天使用 / 备用）
+
+### 2. 智能日期检测 🤖
+
+#### 今天是 13 号（单数）
+```
+单数框: ✅ 今天使用 (绿色徽章)
+双数框: 📂 备用 (蓝灰色徽章)
+```
+
+#### 明天是 14 号（双数）
+```
+单数框: 📂 备用 (蓝灰色徽章)
+双数框: ✅ 今天使用 (绿色徽章)
+```
+
+**自动检测逻辑**：
+```javascript
+const dayOfMonth = new Date().getDate();
+const isOddDay = dayOfMonth % 2 === 1;
+```
+
+### 3. 配置管理工具 🛠️
+
+#### `update_root_folders.py` 命令行工具
+
+**查看当前配置**：
 ```bash
-python3 query_history.py '2025-12-06 13:42'
+python3 update_root_folders.py
 ```
 
-**输出示例：**
-```
-时间: 2025-12-06 13:42:42
-文件: 2025-12-06_1341.txt
-急涨: 1
-急跌: 22
-差值: -21
-计次: 10
-比值: 21.0
-状态: 震荡无序
-
-币种数据 (共 29 个):
-  序号 币种     涨幅    24h涨幅   最高占比   最低占比   优先级
-   1   BTC   -0.03%   -2.62%    71.14%   109.63%    等级6
-  12   BCH   -0.01%   -0.13%    87.29%   126.19%    等级2
-```
-
----
-
-### 2. 生成4指标曲线图
-
-**4个指标：**
-1. **急涨** - 红色实线
-2. **急跌** - 绿色实线
-3. **差值(急涨-急跌)** - 蓝色实线
-4. **计次** - 紫色虚线（使用右侧Y轴）
-
-**特点：**
-- ✅ 双Y轴设计（数量 + 计次）
-- ✅ 清晰的图例和网格线
-- ✅ 自动时间轴标签
-- ✅ 高分辨率PNG输出（150 DPI）
-
-**使用方法：**
+**更新单数日期父文件夹**：
 ```bash
-# 从指定时间到现在
-python3 query_history.py chart '2025-12-06 10:00'
-
-# 指定时间范围
-python3 query_history.py chart '2025-12-06 10:00' '2025-12-06 14:00'
+python3 update_root_folders.py --odd <folder_id>
 ```
 
-**生成的图表：**
-- 文件名：`chart_YYYYMMDD_HHMMSS.png`
-- 查看：已生成示例 `chart_20251206_054259.png`
-
----
-
-### 3. 优先级等级自动计算
-
-**等级规则（按优先级从高到低）：**
-
-| 等级 | 最高占比条件 | 最低占比条件 | 说明 |
-|------|------------|------------|------|
-| **等级1** | > 90% | > 120% | 最优质，两项占比都非常高 |
-| **等级2** | > 80% | > 120% | 优质，最低占比很高 |
-| **等级3** | > 90% | > 110% | 优质，最高占比很高 |
-| **等级4** | > 70% | > 120% | 中等，最低占比很高 |
-| **等级5** | > 80% | > 110% | 中等，两项占比都不错 |
-| **等级6** | < 80% | < 110% | 普通 |
-
-**特点：**
-- ✅ 自动计算每个币种的优先级
-- ✅ 基于用户指定的最高占比和最低占比规则
-- ✅ 在查询结果中显示优先级
-- ✅ 存储到数据库的 `priority_level` 字段
-
-**示例：**
-```
-BCH: 87.29% / 126.19% → 等级2 (最高占比>80%, 最低占比>120%)
-BTC: 71.14% / 109.63% → 等级6 (最高占比<80%, 最低占比<110%)
-```
-
----
-
-## 📁 新增文件
-
-### 主要脚本
-
-1. **query_history.py** (243行)
-   - 历史数据查询
-   - 曲线图生成
-   - 优先级显示
-
-2. **collect_and_store.py** (372行)
-   - 数据采集
-   - 优先级计算
-   - 数据库存储
-   - 统计信息显示
-
-3. **collect_with_score.py** (269行)
-   - 快速查看最新数据
-   - 包含计次得分
-   - 不写入数据库
-
-4. **test_count_score.py**
-   - 计次得分测试
-
-### 文档
-
-5. **QUERY_GUIDE.md** (5800+字符)
-   - 完整使用指南
-   - 所有功能的详细说明
-   - 使用示例
-   - 高级用法
-   - 常见问题
-
----
-
-## 🗄️ 数据库结构
-
-### crypto_snapshots 表
-存储每次采集的市场快照：
-- snapshot_time: 快照时间
-- rush_up: 急涨数量
-- rush_down: 急跌数量
-- diff: 差值
-- count: 计次
-- ratio: 比值
-- status: 市场状态
-
-### crypto_coin_data 表
-存储每个币种的详细数据：
-- symbol: 币种符号
-- change: 涨幅
-- change_24h: 24小时涨幅
-- ratio1: 最高占比
-- ratio2: 最低占比
-- **priority_level: 优先级等级（新增）**
-- high_price: 最高价格
-- current_price: 当前价格
-
----
-
-## 🎯 测试结果
-
-### ✅ 功能测试
-
-1. **数据采集测试**
-   - 成功采集文件：`2025-12-06_1341.txt`
-   - 解析币种数量：29个
-   - 优先级统计：等级2有1个，等级6有28个
-
-2. **查询测试**
-   - 查询时间：`2025-12-06 13:42`
-   - 成功返回完整数据
-   - 优先级正确显示
-
-3. **图表生成测试**
-   - 生成文件：`chart_20251206_054259.png`
-   - 包含4条曲线
-   - 双Y轴正常工作
-
-### ✅ 优先级计算验证
-
-测试数据：
-- BCH: 87.29% / 126.19% → **等级2** ✅ (最高占比>80%, 最低占比>120%)
-- BTC: 71.14% / 109.63% → **等级6** ✅ (最高占比<80%, 最低占比<110%)
-- ETH: 62.62% / 114.48% → **等级6** ✅
-- 其他26个币种 → **等级6** ✅
-
----
-
-## 📊 使用场景示例
-
-### 场景1: 每日数据采集和分析
-
+**更新双数日期父文件夹**：
 ```bash
-# 1. 采集最新数据
-python3 collect_and_store.py
-
-# 2. 查询当前数据
-python3 query_history.py '2025-12-06 13:42'
-
-# 3. 生成今日趋势图
-python3 query_history.py chart '2025-12-06 00:00'
+python3 update_root_folders.py --even <folder_id>
 ```
 
-### 场景2: 查看历史趋势
-
+**同时更新两个**：
 ```bash
-# 查看早中晚三个时间点
-python3 query_history.py '2025-12-06 09:00'
-python3 query_history.py '2025-12-06 13:00'
-python3 query_history.py '2025-12-06 18:00'
-
-# 生成全天趋势图
-python3 query_history.py chart '2025-12-06 00:00' '2025-12-06 23:59'
+python3 update_root_folders.py --odd <id1> --even <id2>
 ```
 
-### 场景3: 寻找高优先级币种
+#### 输出示例
+```
+======================================================================
+📂 当前父文件夹ID配置
+======================================================================
 
+📅 今天日期: 2025-12-13 (13号)
+📌 今天使用: 单数日期父文件夹
+
+1️⃣  单数日期父文件夹 (1, 3, 5, 7, 9, 11, 13...)
+   ID: 1jFGGlGP5KEVhAxpCNxFIYEFI5-cDOBjM
+   状态: ✅ 今天使用
+
+2️⃣  双数日期父文件夹 (2, 4, 6, 8, 10, 12, 14...)
+   ID: 1jFGGlGP5KEVhAxpCNxFIYEFI5-cDOBjM
+   状态: 📂 备用
+
+⏰ 最后更新: 2025-12-13 00:40:00
+======================================================================
+```
+
+### 4. API 端点增强 🔌
+
+#### 新增字段
+```json
+{
+  "root_folder_odd": "1jFGGlGP5KEVhAxpCNxFIYEFI5-cDOBjM",
+  "root_folder_even": "1jFGGlGP5KEVhAxpCNxFIYEFI5-cDOBjM",
+  "today_date": "2025-12-13",
+  ...
+}
+```
+
+#### 测试命令
 ```bash
-# 查询某个时间点
-python3 query_history.py '2025-12-06 13:42'
+curl -s "http://localhost:5000/api/gdrive-monitor/status" | \
+  python3 -c "import sys, json; d=json.load(sys.stdin); \
+  print('单数:', d['root_folder_odd']); \
+  print('双数:', d['root_folder_even'])"
+```
 
-# 在输出中查找等级1-3的币种
-# BCH: 等级2 (87.29%, 126.19%)
+### 5. 配置文件结构 📝
+
+#### 新增字段
+```json
+{
+  "root_folder_odd": "1jFGGlGP5KEVhAxpCNxFIYEFI5-cDOBjM",
+  "root_folder_even": "1jFGGlGP5KEVhAxpCNxFIYEFI5-cDOBjM",
+  "folder_id": "...",
+  "data_date": "2025-12-12",
+  "current_date": "2025-12-12",
+  "last_update": "2025-12-13 00:40:00",
+  "root_folder_description": {
+    "odd": "单数日期父文件夹 (1, 3, 5, 7, 9, 11...)",
+    "even": "双数日期父文件夹 (2, 4, 6, 8, 10, 12...)"
+  }
+}
 ```
 
 ---
 
-## 🔄 自动化建议
+## 🎨 CSS 样式特性
 
-### 设置定时采集（Cron任务）
+### 单数日期框（蓝色）
+```css
+.root-folder-odd {
+    background: linear-gradient(135deg, 
+        rgba(59,130,246,0.2), 
+        rgba(37,99,235,0.3));
+    border: 3px solid #3b82f6;
+}
+```
 
-```bash
-# 编辑crontab
-crontab -e
+### 双数日期框（紫色）
+```css
+.root-folder-even {
+    background: linear-gradient(135deg, 
+        rgba(139,92,246,0.2), 
+        rgba(124,58,237,0.3));
+    border: 3px solid #8b5cf6;
+}
+```
 
-# 每10分钟采集一次数据
-*/10 * * * * cd /home/user/webapp && python3 collect_and_store.py >> collect.log 2>&1
+### Folder ID 显示
+```css
+.folder-id-value {
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fbbf24;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(251,191,36,0.3);
+}
+```
 
-# 每天生成一次趋势图
-0 23 * * * cd /home/user/webapp && python3 query_history.py chart "$(date +\%Y-\%m-\%d) 00:00" >> chart.log 2>&1
+### 响应式设计
+```css
+@media (max-width: 768px) {
+    .root-folders-container {
+        grid-template-columns: 1fr;
+    }
+}
 ```
 
 ---
 
-## 📝 Git提交记录
+## 🌐 部署信息
 
-**Commit:** `b751e75`
-- 标题：feat: add historical query, chart generation and priority level calculation
-- 新增文件：5个
-- 代码行数：1458+ 行
-- 功能：完整实现所有需求
+### 访问地址
+```
+https://5000-iypypqmz2wvn9dmtq7ewn-583b4d74.sandbox.novita.ai/gdrive-monitor-status
+```
 
-**Pull Request:** https://github.com/jamesyidc/6666/pull/1
-- 分支：genspark_ai_developer → main
-- 状态：已创建，等待审核
+### 服务状态
+```bash
+# Flask应用
+pm2 list | grep flask-app
+# Status: ✅ Online
+
+# GDrive监控
+pm2 list | grep gdrive-monitor
+# Status: ✅ Online
+```
 
 ---
 
-## ✨ 总结
+## 📦 文件清单
 
-所有用户要求的功能已经100%完成：
+### 新增文件
+1. ✅ `update_root_folders.py` - 配置管理工具
+2. ✅ `ROOT_FOLDERS_GUIDE.md` - 完整使用指南
+3. ✅ `FEATURE_SUMMARY.md` - 功能总结（本文件）
 
-1. ✅ **按日期+时间查询历史** - 不需要开始/结束时间，直接输入查询时间
-2. ✅ **4条曲线图** - 急涨、急跌、差值、计次，清晰展示
-3. ✅ **优先级计算** - 基于最高占比和最低占比的6级等级系统
+### 修改文件
+1. ✅ `templates/gdrive_monitor_status.html` - 添加两个显示框
+2. ✅ `app_new.py` - API返回父文件夹ID
+3. ✅ `daily_folder_config.json` - 新增配置字段
 
-所有功能都已测试通过，文档完善，代码已提交并创建PR。
+---
 
-🎉 **项目完成！**
+## 🎯 使用流程
+
+### 首次设置
+```bash
+# 1. 进入项目目录
+cd /home/user/webapp
+
+# 2. 查看当前配置
+python3 update_root_folders.py
+
+# 3. 设置父文件夹ID
+python3 update_root_folders.py \
+  --odd 1ABC123... \
+  --even 1XYZ789...
+
+# 4. 访问监控页面验证
+# https://5000-xxx.sandbox.novita.ai/gdrive-monitor-status
+```
+
+### 日常使用
+```bash
+# 查看状态
+python3 update_root_folders.py
+
+# 访问监控页面
+# 系统会自动根据日期显示哪个是"今天使用"
+```
+
+### 更新配置
+```bash
+# 更新某个父文件夹
+python3 update_root_folders.py --odd <new_id>
+
+# 重启服务（可选）
+pm2 restart flask-app
+
+# 验证结果
+python3 update_root_folders.py
+```
+
+---
+
+## 📊 技术细节
+
+### 前端
+- **HTML**: 两个独立的 `<div>` 框
+- **CSS**: 渐变背景 + 响应式布局
+- **JavaScript**: 自动日期检测 + 实时刷新
+
+### 后端
+- **Flask**: API端点返回配置
+- **Python**: 配置管理工具
+- **JSON**: 配置文件存储
+
+### 数据流
+```
+┌─────────────────┐
+│ 配置文件 .json   │
+└────────┬────────┘
+         │
+         ↓
+┌─────────────────┐
+│ Flask API       │ ← HTTP GET
+└────────┬────────┘
+         │
+         ↓
+┌─────────────────┐
+│ 前端 JavaScript │
+└────────┬────────┘
+         │
+         ↓
+┌─────────────────┐
+│ 显示两个框      │
+└─────────────────┘
+```
+
+---
+
+## 🎓 关键特性
+
+### 1. 自动化
+- ✅ 自动检测今天是单数还是双数
+- ✅ 自动高亮显示当前使用的文件夹
+- ✅ 每2秒自动刷新状态
+
+### 2. 可视化
+- ✅ 清晰的颜色区分（蓝色 vs 紫色）
+- ✅ 大号图标（1️⃣ vs 2️⃣）
+- ✅ 状态徽章（✅ 今天使用 / 📂 备用）
+
+### 3. 易用性
+- ✅ 命令行工具简单易用
+- ✅ 实时预览配置变化
+- ✅ 详细的使用文档
+
+### 4. 可维护性
+- ✅ JSON配置文件结构清晰
+- ✅ 代码注释完整
+- ✅ 完整的文档支持
+
+---
+
+## 📚 文档资源
+
+1. **[ROOT_FOLDERS_GUIDE.md](ROOT_FOLDERS_GUIDE.md)** - 完整使用指南
+2. **[GDRIVE_DATA_SOURCE_DIAGNOSIS.md](GDRIVE_DATA_SOURCE_DIAGNOSIS.md)** - 数据源诊断
+3. **[GDRIVE_11MIN_TIMEOUT_RECOVERY.md](GDRIVE_11MIN_TIMEOUT_RECOVERY.md)** - 超时恢复
+4. **[GDRIVE_MONITOR_VISUALIZATION.md](GDRIVE_MONITOR_VISUALIZATION.md)** - 监控可视化
+
+---
+
+## 🚀 Git 提交记录
+
+### Commit 1: 核心功能
+```
+feat: Add dual root folder ID display boxes for odd/even dates
+- Added two separate display boxes for root folder IDs
+- Auto-detects current date and highlights active folder
+- Beautiful gradient styling
+```
+
+### Commit 2: 文档
+```
+docs: Add comprehensive guide for root folder ID management
+- Complete usage guide
+- Tool documentation
+- Quick start guide
+```
+
+### GitHub PR
+```
+https://github.com/jamesyidc/66661/pull/1
+```
+分支: `genspark_ai_developer` → `main`
+
+---
+
+## ✅ 验收清单
+
+- [x] 显示两个独立的父文件夹ID框
+- [x] 框1：单数日期（1, 3, 5, 7...）
+- [x] 框2：双数日期（2, 4, 6, 8...）
+- [x] 自动检测今天是单数还是双数
+- [x] 显示"✅ 今天使用"徽章在正确的框上
+- [x] 显示"📂 备用"徽章在另一个框上
+- [x] API返回两个folder ID
+- [x] 配置管理工具
+- [x] 完整文档
+- [x] 响应式设计
+- [x] 实时刷新
+
+---
+
+## 🎉 总结
+
+**功能完成度**: 100% ✅
+
+**核心亮点**:
+1. 🎨 **美观的双框设计** - 蓝色 + 紫色渐变
+2. 🤖 **智能日期检测** - 自动识别单双数
+3. 🛠️ **便捷管理工具** - 一键更新配置
+4. 📡 **完整API支持** - 实时数据交互
+5. 📚 **详细文档** - 使用指南完善
+
+**访问地址**:
+```
+https://5000-iypypqmz2wvn9dmtq7ewn-583b4d74.sandbox.novita.ai/gdrive-monitor-status
+```
+
+---
+
+**📍 完成时间**: 2025-12-13 00:45 (北京时间)  
+**🔧 状态**: ✅ 已部署并测试  
+**📖 文档**: ✅ 完整  
+**🌐 可访问**: ✅ 正常运行
