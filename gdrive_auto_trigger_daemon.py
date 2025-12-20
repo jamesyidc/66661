@@ -221,7 +221,8 @@ def main():
     log("=" * 80)
     
     # 设置定时任务
-    schedule.every().day.at("00:10").do(daily_trigger_at_00_10)
+    # 注意：schedule 使用系统时间（UTC），北京时间 00:10 = UTC 16:10
+    schedule.every().day.at("16:10").do(daily_trigger_at_00_10)
     schedule.every(5).minutes.do(periodic_check)
     
     log("✅ 定时任务已设置，开始监控...")
