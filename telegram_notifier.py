@@ -243,8 +243,18 @@ class TelegramNotifier:
             buy_signals = []
             double_buy_signals = []  # 同时触发支撑1和支撑2
             
+            # 统计触碰支撑线的总数（用于普通抄底信号）
+            support_s1_count = 0  # 触碰支撑1的币种数
+            support_s2_count = 0  # 触碰支撑2的币种数
+            
             for row in rows:
                 symbol, price, dist_s1, dist_s2, dist_r1, dist_r2, s1, s2, s3, s4, record_time = row
+                
+                # 统计支撑线触碰数
+                if s1 == 1:
+                    support_s1_count += 1
+                if s2 == 1:
+                    support_s2_count += 1
                 
                 # 检查是否同时触发支撑1和支撑2（双重抄底信号 - 更强信号！）
                 if s1 == 1 and s2 == 1:
@@ -269,8 +279,18 @@ class TelegramNotifier:
             sell_signals = []
             double_sell_signals = []  # 同时触发压力1和压力2
             
+            # 统计触碰压力线的总数（用于普通逃顶信号）
+            pressure_r1_count = 0  # 触碰压力1的币种数
+            pressure_r2_count = 0  # 触碰压力2的币种数
+            
             for row in rows:
                 symbol, price, dist_s1, dist_s2, dist_r1, dist_r2, s1, s2, s3, s4, record_time = row
+                
+                # 统计压力线触碰数
+                if s3 == 1:
+                    pressure_r1_count += 1
+                if s4 == 1:
+                    pressure_r2_count += 1
                 
                 # 检查是否同时触发压力1和压力2（双重逃顶信号 - 更强信号！）
                 if s3 == 1 and s4 == 1:
@@ -292,20 +312,28 @@ class TelegramNotifier:
                     })
             
             # 构建信号数据
+            # 普通抄底信号：支撑1触碰数 + 支撑2触碰数
+            total_support_count = support_s1_count + support_s2_count
             buy_data = None
-            if buy_signals:
+            if total_support_count > 0:
                 buy_data = {
                     'time': record_time,
-                    'count': len(buy_signals),
-                    'coins': buy_signals
+                    'count': total_support_count,  # 总数 = 支撑1 + 支撑2
+                    'coins': buy_signals,  # 具体币种列表（不包括双重抄底）
+                    'support_s1_count': support_s1_count,
+                    'support_s2_count': support_s2_count
                 }
             
+            # 普通逃顶信号：压力1触碰数 + 压力2触碰数
+            total_pressure_count = pressure_r1_count + pressure_r2_count
             sell_data = None
-            if sell_signals:
+            if total_pressure_count > 0:
                 sell_data = {
                     'time': record_time,
-                    'count': len(sell_signals),
-                    'coins': sell_signals
+                    'count': total_pressure_count,  # 总数 = 压力1 + 压力2
+                    'coins': sell_signals,  # 具体币种列表（不包括双重逃顶）
+                    'pressure_r1_count': pressure_r1_count,
+                    'pressure_r2_count': pressure_r2_count
                 }
             
             # 构建双重信号数据
@@ -355,16 +383,18 @@ class TelegramNotifier:
         # 处理普通抄底信号
         if buy_data and self.config['signal_types']['buy']['enabled']:
             min_coins_buy = self.config['signal_types'].get('buy', {}).get('min_coins', self.config['push_conditions']['min_coins'])
+            s1_count = buy_data.get('support_s1_count', 0)
+            s2_count = buy_data.get('support_s2_count', 0)
             if buy_data['count'] >= min_coins_buy:
                 if self.check_cooldown('buy'):
-                    self.log(f"🟢 检测到抄底信号: {buy_data['count']}个币种")
+                    self.log(f"🟢 检测到抄底信号: {buy_data['count']}个币种 (支撑1: {s1_count}个, 支撑2: {s2_count}个)")
                     message = self.format_buy_signal(buy_data)
                     if self.send_message(message):
                         self.last_buy_signal_time = datetime.now(BEIJING_TZ)
                 else:
                     self.log(f"⏳ 抄底信号在冷却期，跳过推送")
             else:
-                self.log(f"📊 抄底信号币种数不足 ({buy_data['count']} < {min_coins_buy})，跳过推送")
+                self.log(f"📊 抄底信号币种数不足 ({buy_data['count']} < {min_coins_buy}，支撑1: {s1_count}个, 支撑2: {s2_count}个)，跳过推送")
         
         # 优先处理双重逃顶信号（更强信号）
         if double_sell_data and self.config['signal_types'].get('double_sell', {}).get('enabled', False):
@@ -383,16 +413,18 @@ class TelegramNotifier:
         # 处理普通逃顶信号
         if sell_data and self.config['signal_types']['sell']['enabled']:
             min_coins_sell = self.config['signal_types'].get('sell', {}).get('min_coins', self.config['push_conditions']['min_coins'])
+            r1_count = sell_data.get('pressure_r1_count', 0)
+            r2_count = sell_data.get('pressure_r2_count', 0)
             if sell_data['count'] >= min_coins_sell:
                 if self.check_cooldown('sell'):
-                    self.log(f"🔴 检测到逃顶信号: {sell_data['count']}个币种")
+                    self.log(f"🔴 检测到逃顶信号: {sell_data['count']}个币种 (压力1: {r1_count}个, 压力2: {r2_count}个)")
                     message = self.format_sell_signal(sell_data)
                     if self.send_message(message):
                         self.last_sell_signal_time = datetime.now(BEIJING_TZ)
                 else:
                     self.log(f"⏳ 逃顶信号在冷却期，跳过推送")
             else:
-                self.log(f"📊 逃顶信号币种数不足 ({sell_data['count']} < {min_coins_sell})，跳过推送")
+                self.log(f"📊 逃顶信号币种数不足 ({sell_data['count']} < {min_coins_sell}，压力1: {r1_count}个, 压力2: {r2_count}个)，跳过推送")
         
         if not buy_data and not sell_data and not double_buy_data and not double_sell_data:
             self.log("📭 当前没有触发信号")
