@@ -69,22 +69,32 @@ def explore_drive_folder(folder_id, target_folder_name=None):
         response.raise_for_status()
         html = response.text
         
-        # 解析文件夹列表
+        # 使用BeautifulSoup解析HTML
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        # 查找所有 flip-entry 元素
+        entries = soup.find_all('div', class_='flip-entry')
+        
         folders = []
-        import re
-        
-        # 匹配文件夹项
-        # 格式: <div class="flip-entry" id="entry-...">
-        pattern = r'<div class="flip-entry"[^>]*id="entry-([^"]+)"[^>]*>.*?<div[^>]*title="([^"]+)"'
-        matches = re.findall(pattern, html, re.DOTALL)
-        
-        for folder_id_match, folder_name in matches:
-            # 只保留文件夹（通过检查是否有 dir- 前缀）
-            if folder_id_match.startswith('dir-'):
-                actual_id = folder_id_match.replace('dir-', '')
+        for entry in entries:
+            # 获取ID (从id属性中提取，格式: entry-FOLDER_ID)
+            entry_id = entry.get('id', '')
+            if entry_id.startswith('entry-'):
+                folder_id_extracted = entry_id.replace('entry-', '')
+                
+                # 获取标题
+                title_div = entry.find('div', class_='flip-entry-title')
+                if title_div:
+                    folder_name = title_div.get_text(strip=True)
+                else:
+                    # 备用方案：从链接获取
+                    link = entry.find('a', href=True)
+                    folder_name = link.get_text(strip=True) if link else folder_id_extracted
+                
                 folders.append({
                     'name': folder_name,
-                    'id': actual_id
+                    'id': folder_id_extracted
                 })
         
         # 如果指定了目标文件夹名，查找匹配的
@@ -103,18 +113,46 @@ def explore_drive_folder(folder_id, target_folder_name=None):
 def find_today_folder(parent_folder_id, today_date):
     """
     在父文件夹中查找今天日期的文件夹
-    返回: {name, id} 或 None
+    如果找不到，则查找最新的可用日期文件夹
+    返回: {name, id, date} 或 None
     """
     logging.info(f"🔍 在父文件夹 {parent_folder_id} 中查找 '{today_date}' 文件夹...")
     
+    # 先尝试查找今天的文件夹
     folder = explore_drive_folder(parent_folder_id, today_date)
     
     if folder:
         logging.info(f"✅ 找到目标文件夹: {folder['name']} (ID: {folder['id']})")
-        return folder
-    else:
-        logging.warning(f"⚠️ 未找到 '{today_date}' 文件夹")
+        return {**folder, 'date': today_date}
+    
+    logging.warning(f"⚠️ 未找到 '{today_date}' 文件夹")
+    logging.info(f"🔍 正在查找最新可用的日期文件夹...")
+    
+    # 获取所有文件夹
+    all_folders = explore_drive_folder(parent_folder_id)
+    
+    if not all_folders:
+        logging.error("❌ 无法获取文件夹列表")
         return None
+    
+    # 筛选出日期格式的文件夹 (YYYY-MM-DD)
+    import re
+    date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+    date_folders = [f for f in all_folders if date_pattern.match(f['name'])]
+    
+    if not date_folders:
+        logging.error("❌ 未找到任何日期格式的文件夹")
+        return None
+    
+    # 按日期排序，找到最新的
+    date_folders.sort(key=lambda x: x['name'], reverse=True)
+    latest_folder = date_folders[0]
+    
+    logging.info(f"📅 找到最新可用文件夹: {latest_folder['name']} (ID: {latest_folder['id']})")
+    logging.info(f"📊 可用日期文件夹总数: {len(date_folders)}")
+    logging.info(f"📋 最近5个文件夹: {[f['name'] for f in date_folders[:5]]}")
+    
+    return {**latest_folder, 'date': latest_folder['name']}
 
 def auto_update_config():
     """自动更新配置文件"""
@@ -152,12 +190,19 @@ def auto_update_config():
     today_folder = find_today_folder(parent_folder_id, today_date)
     
     if not today_folder:
-        logging.error(f"❌ 未能找到 {today_date} 文件夹，无法自动更新")
+        logging.error(f"❌ 未能找到任何可用的日期文件夹，无法自动更新")
         return False
     
     # 5. 更新配置
     old_config = config.copy()
-    config['current_date'] = today_date
+    actual_date = today_folder['date']
+    
+    # 如果找到的不是今天的文件夹，给出提示
+    if actual_date != today_date:
+        logging.warning(f"⚠️ 今日文件夹 ({today_date}) 尚未创建")
+        logging.info(f"✅ 使用最新可用文件夹: {actual_date}")
+    
+    config['current_date'] = actual_date
     config['folder_id'] = today_folder['id']
     config['updated_at'] = datetime.now(BEIJING_TZ).strftime('%Y-%m-%d %H:%M:%S')
     config['auto_updated'] = True
