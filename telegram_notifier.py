@@ -338,11 +338,10 @@ class TelegramNotifier:
         # 获取最新信号（包括双重信号）
         buy_data, sell_data, double_buy_data, double_sell_data = self.get_latest_signals()
         
-        min_coins = self.config['push_conditions']['min_coins']
-        
         # 优先处理双重抄底信号（更强信号）
         if double_buy_data and self.config['signal_types'].get('double_buy', {}).get('enabled', False):
-            if double_buy_data['count'] >= min_coins:
+            min_coins_double_buy = self.config['signal_types'].get('double_buy', {}).get('min_coins', 1)
+            if double_buy_data['count'] >= min_coins_double_buy:
                 if self.check_cooldown('double_buy'):
                     self.log(f"🟢🟢 检测到双重抄底信号（支撑1+2）: {double_buy_data['count']}个币种")
                     message = self.format_double_buy_signal(double_buy_data)
@@ -351,11 +350,12 @@ class TelegramNotifier:
                 else:
                     self.log(f"⏳ 双重抄底信号在冷却期，跳过推送")
             else:
-                self.log(f"📊 双重抄底信号币种数不足 ({double_buy_data['count']} < {min_coins})，跳过推送")
+                self.log(f"📊 双重抄底信号币种数不足 ({double_buy_data['count']} < {min_coins_double_buy})，跳过推送")
         
         # 处理普通抄底信号
         if buy_data and self.config['signal_types']['buy']['enabled']:
-            if buy_data['count'] >= min_coins:
+            min_coins_buy = self.config['signal_types'].get('buy', {}).get('min_coins', self.config['push_conditions']['min_coins'])
+            if buy_data['count'] >= min_coins_buy:
                 if self.check_cooldown('buy'):
                     self.log(f"🟢 检测到抄底信号: {buy_data['count']}个币种")
                     message = self.format_buy_signal(buy_data)
@@ -364,11 +364,12 @@ class TelegramNotifier:
                 else:
                     self.log(f"⏳ 抄底信号在冷却期，跳过推送")
             else:
-                self.log(f"📊 抄底信号币种数不足 ({buy_data['count']} < {min_coins})，跳过推送")
+                self.log(f"📊 抄底信号币种数不足 ({buy_data['count']} < {min_coins_buy})，跳过推送")
         
         # 优先处理双重逃顶信号（更强信号）
         if double_sell_data and self.config['signal_types'].get('double_sell', {}).get('enabled', False):
-            if double_sell_data['count'] >= min_coins:
+            min_coins_double_sell = self.config['signal_types'].get('double_sell', {}).get('min_coins', 1)
+            if double_sell_data['count'] >= min_coins_double_sell:
                 if self.check_cooldown('double_sell'):
                     self.log(f"🔴🔴 检测到双重逃顶信号（压力1+2）: {double_sell_data['count']}个币种")
                     message = self.format_double_sell_signal(double_sell_data)
@@ -377,11 +378,12 @@ class TelegramNotifier:
                 else:
                     self.log(f"⏳ 双重逃顶信号在冷却期，跳过推送")
             else:
-                self.log(f"📊 双重逃顶信号币种数不足 ({double_sell_data['count']} < {min_coins})，跳过推送")
+                self.log(f"📊 双重逃顶信号币种数不足 ({double_sell_data['count']} < {min_coins_double_sell})，跳过推送")
         
         # 处理普通逃顶信号
         if sell_data and self.config['signal_types']['sell']['enabled']:
-            if sell_data['count'] >= min_coins:
+            min_coins_sell = self.config['signal_types'].get('sell', {}).get('min_coins', self.config['push_conditions']['min_coins'])
+            if sell_data['count'] >= min_coins_sell:
                 if self.check_cooldown('sell'):
                     self.log(f"🔴 检测到逃顶信号: {sell_data['count']}个币种")
                     message = self.format_sell_signal(sell_data)
@@ -390,7 +392,7 @@ class TelegramNotifier:
                 else:
                     self.log(f"⏳ 逃顶信号在冷却期，跳过推送")
             else:
-                self.log(f"📊 逃顶信号币种数不足 ({sell_data['count']} < {min_coins})，跳过推送")
+                self.log(f"📊 逃顶信号币种数不足 ({sell_data['count']} < {min_coins_sell})，跳过推送")
         
         if not buy_data and not sell_data and not double_buy_data and not double_sell_data:
             self.log("📭 当前没有触发信号")
