@@ -77,43 +77,87 @@ class TelegramNotifier:
             return False
     
     def format_buy_signal(self, signal_data):
-        """格式化抄底信号消息"""
-        template = self.config['templates']['buy_signal']
+        """格式化抄底信号消息（支撑线1+支撑线2总数>=8，强信号！）"""
+        # 获取支撑线统计
+        s1_count = signal_data.get('support_s1_count', 0)
+        s2_count = signal_data.get('support_s2_count', 0)
+        total_count = signal_data['count']
         
         # 格式化币种列表
         coins_list = []
         for i, coin in enumerate(signal_data['coins'], 1):
             coins_list.append(f"{i}. {coin['symbol']} - ${coin['price']:.2f} ({coin['position']})")
         
-        coins_text = "\n".join(coins_list)
+        coins_text = "\n".join(coins_list) if coins_list else "（所有币种均为双重抄底信号）"
         
-        message = template.format(
-            time=signal_data['time'],
-            count=signal_data['count'],
-            coins=coins_text,
-            url="https://5000-ilsitop6yown44mau7vd7-c07dda5e.sandbox.novita.ai/support-resistance"
-        )
-        
+        message = f"""
+✅✅✅ <b>【强势抄底信号！】</b> ✅✅✅
+━━━━━━━━━━━━━━━━━━━━━━
+💎 <b>市场机会显现！建议关注！</b>
+━━━━━━━━━━━━━━━━━━━━━━
+
+⏰ 触发时间: {signal_data['time']}
+📊 <b>总触碰数: {total_count}个币种</b>
+   ├─ 支撑线1: {s1_count}个币种
+   └─ 支撑线2: {s2_count}个币种
+
+🔥 <b>信号强度: 🟢🟢🟢 强势买入 🟢🟢🟢</b>
+
+💰 <b>关键提示</b>:
+   • 多个币种同时触碰支撑线
+   • 市场可能存在反弹机会
+   • 建议关注潜在买入点
+   • 注意仓位管理和风控
+
+<b>单独触发币种:</b>
+{coins_text}
+
+━━━━━━━━━━━━━━━━━━━━━━
+📍 实时监控: https://5000-ilsitop6yown44mau7vd7-c07dda5e.sandbox.novita.ai/support-resistance
+━━━━━━━━━━━━━━━━━━━━━━
+"""
         return message
     
     def format_sell_signal(self, signal_data):
-        """格式化逃顶信号消息"""
-        template = self.config['templates']['sell_signal']
+        """格式化逃顶信号消息（压力线1+压力线2总数>=8，最强信号！）"""
+        # 获取压力线统计
+        r1_count = signal_data.get('pressure_r1_count', 0)
+        r2_count = signal_data.get('pressure_r2_count', 0)
+        total_count = signal_data['count']
         
         # 格式化币种列表
         coins_list = []
         for i, coin in enumerate(signal_data['coins'], 1):
             coins_list.append(f"{i}. {coin['symbol']} - ${coin['price']:.2f} ({coin['position']})")
         
-        coins_text = "\n".join(coins_list)
+        coins_text = "\n".join(coins_list) if coins_list else "（所有币种均为双重逃顶信号）"
         
-        message = template.format(
-            time=signal_data['time'],
-            count=signal_data['count'],
-            coins=coins_text,
-            url="https://5000-ilsitop6yown44mau7vd7-c07dda5e.sandbox.novita.ai/support-resistance"
-        )
-        
+        message = f"""
+🚨🚨🚨 <b>【最强逃顶信号！】</b> 🚨🚨🚨
+━━━━━━━━━━━━━━━━━━━━━━
+⚠️ <b>市场风险极高！建议立即关注！</b>
+━━━━━━━━━━━━━━━━━━━━━━
+
+⏰ 触发时间: {signal_data['time']}
+📊 <b>总触碰数: {total_count}个币种</b>
+   ├─ 压力线1: {r1_count}个币种
+   └─ 压力线2: {r2_count}个币种
+
+🔥 <b>信号强度: 🔴🔴🔴 极度危险 🔴🔴🔴</b>
+
+💥 <b>关键提示</b>:
+   • 多个币种同时触碰压力线
+   • 市场可能面临重大调整
+   • 强烈建议考虑止盈/减仓
+   • 避免追高，控制风险
+
+<b>单独触发币种:</b>
+{coins_text}
+
+━━━━━━━━━━━━━━━━━━━━━━
+📍 实时监控: https://5000-ilsitop6yown44mau7vd7-c07dda5e.sandbox.novita.ai/support-resistance
+━━━━━━━━━━━━━━━━━━━━━━
+"""
         return message
     
     def format_double_buy_signal(self, signal_data):
@@ -380,14 +424,14 @@ class TelegramNotifier:
             else:
                 self.log(f"📊 双重抄底信号币种数不足 ({double_buy_data['count']} < {min_coins_double_buy})，跳过推送")
         
-        # 处理普通抄底信号
+        # 处理普通抄底信号（强势信号！）
         if buy_data and self.config['signal_types']['buy']['enabled']:
             min_coins_buy = self.config['signal_types'].get('buy', {}).get('min_coins', self.config['push_conditions']['min_coins'])
             s1_count = buy_data.get('support_s1_count', 0)
             s2_count = buy_data.get('support_s2_count', 0)
             if buy_data['count'] >= min_coins_buy:
                 if self.check_cooldown('buy'):
-                    self.log(f"🟢 检测到抄底信号: {buy_data['count']}个币种 (支撑1: {s1_count}个, 支撑2: {s2_count}个)")
+                    self.log(f"✅✅✅ 检测到强势抄底信号！总数: {buy_data['count']}个币种 (支撑1: {s1_count}个 + 支撑2: {s2_count}个)")
                     message = self.format_buy_signal(buy_data)
                     if self.send_message(message):
                         self.last_buy_signal_time = datetime.now(BEIJING_TZ)
@@ -410,14 +454,14 @@ class TelegramNotifier:
             else:
                 self.log(f"📊 双重逃顶信号币种数不足 ({double_sell_data['count']} < {min_coins_double_sell})，跳过推送")
         
-        # 处理普通逃顶信号
+        # 处理普通逃顶信号（最强信号！）
         if sell_data and self.config['signal_types']['sell']['enabled']:
             min_coins_sell = self.config['signal_types'].get('sell', {}).get('min_coins', self.config['push_conditions']['min_coins'])
             r1_count = sell_data.get('pressure_r1_count', 0)
             r2_count = sell_data.get('pressure_r2_count', 0)
             if sell_data['count'] >= min_coins_sell:
                 if self.check_cooldown('sell'):
-                    self.log(f"🔴 检测到逃顶信号: {sell_data['count']}个币种 (压力1: {r1_count}个, 压力2: {r2_count}个)")
+                    self.log(f"🚨🚨🚨 检测到最强逃顶信号！总数: {sell_data['count']}个币种 (压力1: {r1_count}个 + 压力2: {r2_count}个)")
                     message = self.format_sell_signal(sell_data)
                     if self.send_message(message):
                         self.last_sell_signal_time = datetime.now(BEIJING_TZ)
