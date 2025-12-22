@@ -15,44 +15,38 @@ def calculate_count_score(snapshot_time, count):
     - display_str: 如 "★★★" 或 "☆---"
     - score_type: "实心3星" 或 "空心3星"
     
-    规则（新版）：
+    规则（新版 - 与collect_and_store.py保持一致）：
     截止6点前:
-      - count <= 1:              3颗实心星 ★★★
-      - 1 < count <= 2:          2颗实心星 ★★
-      - 2 < count <= 3:          1颗实心星 ★
-      - 3 < count <= 4:          1颗空心星 ☆
-      - 4 < count <= 5:          2颗空心星 ☆☆
-      - count > 5:               3颗空心星 ☆☆☆
+      - count <= 1:              ★★★
+      - 1 < count <= 2:          ★★☆
+      - 2 < count <= 3:          ★☆☆
+      - 3 < count <= 4:          ☆☆☆
+      - 4 < count <= 5:          ☆☆---
+      - count > 5:               ☆---
     
     截止12点前:
-      - count <= 2:              3颗实心星 ★★★
-      - 2 < count <= 3:          2颗实心星 ★★
-      - 3 < count <= 4:          1颗实心星 ★
-      - 4 < count <= 5:          (跳过,无评分)
-      - 5 < count <= 6:          1颗空心星 ☆
-      - 6 < count <= 7:          2颗空心星 ☆☆
-      - count > 7:               3颗空心星 ☆☆☆
+      - count <= 2:              ★★★
+      - 2 < count <= 3:          ★★☆
+      - 3 < count <= 4:          ★☆☆
+      - 4 < count <= 5:          ☆☆☆
+      - 5 < count <= 6:          ☆☆---
+      - count > 6:               ☆---
     
     截止18点前:
-      - count <= 3:              3颗实心星 ★★★
-      - 3 < count <= 4:          2颗实心星 ★★
-      - 4 < count <= 5:          1颗实心星 ★
-      - 5 < count <= 6:          (跳过,无评分)
-      - 6 < count <= 7:          (跳过,无评分)
-      - 7 < count <= 8:          1颗空心星 ☆
-      - 8 < count <= 9:          2颗空心星 ☆☆
-      - count > 9:               3颗空心星 ☆☆☆
+      - count <= 3:              ★★★
+      - 3 < count <= 4:          ★★☆
+      - 4 < count <= 5:          ★☆☆
+      - 5 < count <= 6:          ☆☆☆
+      - 6 < count <= 7:          ☆☆---
+      - count > 7:               ☆---
     
     24点前:
-      - count <= 4:              3颗实心星 ★★★
-      - 4 < count <= 5:          2颗实心星 ★★
-      - 5 < count <= 6:          1颗实心星 ★
-      - 6 < count <= 7:          (跳过,无评分)
-      - 7 < count <= 8:          (跳过,无评分)
-      - 8 < count <= 9:          (跳过,无评分)
-      - 9 < count <= 10:         1颗空心星 ☆
-      - 10 < count <= 11:        2颗空心星 ☆☆
-      - count > 11:              3颗空心星 ☆☆☆
+      - count <= 4:              ★★★
+      - 4 < count <= 5:          ★★☆
+      - 5 < count <= 6:          ★☆☆
+      - 6 < count <= 7:          ☆☆☆
+      - 7 < count <= 8:          ☆☆---
+      - count > 8:               ☆---
     """
     try:
         # 解析时间，提取小时
@@ -64,63 +58,57 @@ def calculate_count_score(snapshot_time, count):
             if count <= 1:
                 return "★★★", "实心3星"
             elif 1 < count <= 2:
-                return "★★", "实心2星"
+                return "★★☆", "实心2星"
             elif 2 < count <= 3:
-                return "★", "实心1星"
+                return "★☆☆", "实心1星"
             elif 3 < count <= 4:
-                return "☆", "空心1星"
+                return "☆☆☆", "空心1星"
             elif 4 < count <= 5:
-                return "☆☆", "空心2星"
+                return "☆☆---", "空心2星"
             else:  # count > 5
-                return "☆☆☆", "空心3星"
+                return "☆---", "空心3星"
                 
         elif hour < 12:  # 6-12点前（截止12点前）
             if count <= 2:
                 return "★★★", "实心3星"
             elif 2 < count <= 3:
-                return "★★", "实心2星"
+                return "★★☆", "实心2星"
             elif 3 < count <= 4:
-                return "★", "实心1星"
+                return "★☆☆", "实心1星"
             elif 4 < count <= 5:
-                return "", "无评分"  # 跳过
+                return "☆☆☆", "空心1星"
             elif 5 < count <= 6:
-                return "☆", "空心1星"
-            elif 6 < count <= 7:
-                return "☆☆", "空心2星"
-            else:  # count > 7
-                return "☆☆☆", "空心3星"
+                return "☆☆---", "空心2星"
+            else:  # count > 6
+                return "☆---", "空心3星"
                 
         elif hour < 18:  # 12-18点前（截止18点前）
             if count <= 3:
                 return "★★★", "实心3星"
             elif 3 < count <= 4:
-                return "★★", "实心2星"
+                return "★★☆", "实心2星"
             elif 4 < count <= 5:
-                return "★", "实心1星"
-            elif 5 < count <= 7:  # 5-7跳过
-                return "", "无评分"
-            elif 7 < count <= 8:
-                return "☆", "空心1星"
-            elif 8 < count <= 9:
-                return "☆☆", "空心2星"
-            else:  # count > 9
-                return "☆☆☆", "空心3星"
+                return "★☆☆", "实心1星"
+            elif 5 < count <= 6:
+                return "☆☆☆", "空心1星"
+            elif 6 < count <= 7:
+                return "☆☆---", "空心2星"
+            else:  # count > 7
+                return "☆---", "空心3星"
                 
         else:  # 18-24点（24点前）
             if count <= 4:
                 return "★★★", "实心3星"
             elif 4 < count <= 5:
-                return "★★", "实心2星"
+                return "★★☆", "实心2星"
             elif 5 < count <= 6:
-                return "★", "实心1星"
-            elif 6 < count <= 9:  # 6-9跳过
-                return "", "无评分"
-            elif 9 < count <= 10:
-                return "☆", "空心1星"
-            elif 10 < count <= 11:
-                return "☆☆", "空心2星"
-            else:  # count > 11
-                return "☆☆☆", "空心3星"
+                return "★☆☆", "实心1星"
+            elif 6 < count <= 7:
+                return "☆☆☆", "空心1星"
+            elif 7 < count <= 8:
+                return "☆☆---", "空心2星"
+            else:  # count > 8
+                return "☆---", "空心3星"
                 
     except Exception as e:
         print(f"计算得分出错: {e}")

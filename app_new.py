@@ -611,6 +611,9 @@ MAIN_HTML = """
             <a href="/price-comparison" class="system-link">
                 <span>💱</span> 比价系统
             </a>
+            <a href="/fund-monitor" class="system-link featured">
+                <span>💰</span> 资金监控系统
+            </a>
         </div>
         
         <!-- 控制栏 -->
@@ -9794,6 +9797,474 @@ def telegram_config_api():
             'error': str(e),
             'traceback': traceback.format_exc()
         }), 500
+
+# ==================== 资金监控系统 API ====================
+
+@app.route('/api/fund-monitor/latest', methods=['GET'])
+def fund_monitor_latest():
+    """获取最新的资金监控数据（所有币种，所有时间周期）"""
+    try:
+        conn = sqlite3.connect('fund_monitor.db')
+        cursor = conn.cursor()
+        
+        # 获取每个币种、每个时间周期的最新数据
+        cursor.execute('''
+            SELECT symbol, interval_type, timestamp, collect_time, volume, 
+                   avg_3day, deviation_percent, is_abnormal
+            FROM fund_monitor_aggregated
+            WHERE (symbol, interval_type, timestamp) IN (
+                SELECT symbol, interval_type, MAX(timestamp)
+                FROM fund_monitor_aggregated
+                GROUP BY symbol, interval_type
+            )
+            ORDER BY symbol, interval_type
+        ''')
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        # 按币种组织数据
+        data_by_symbol = {}
+        for row in rows:
+            symbol = row[0]
+            if symbol not in data_by_symbol:
+                data_by_symbol[symbol] = {
+                    '15min': None,
+                    '30min': None,
+                    '60min': None
+                }
+            
+            interval_type = row[1]
+            data_by_symbol[symbol][interval_type] = {
+                'timestamp': row[2],
+                'collect_time': row[3],
+                'volume': round(row[4], 2),
+                'avg_3day': round(row[5], 2) if row[5] is not None else None,
+                'deviation_percent': round(row[6], 2) if row[6] is not None else None,
+                'is_abnormal': bool(row[7])
+            }
+        
+        return jsonify({
+            'success': True,
+            'data': data_by_symbol,
+            'update_time': datetime.now(BEIJING_TZ).strftime('%Y-%m-%d %H:%M:%S')
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/api/fund-monitor/history/<symbol>', methods=['GET'])
+def fund_monitor_history(symbol):
+    """获取指定币种的历史数据"""
+    try:
+        interval_type = request.args.get('interval', '15min')  # 默认15分钟
+        hours = int(request.args.get('hours', 24))  # 默认24小时
+        
+        conn = sqlite3.connect('fund_monitor.db')
+        cursor = conn.cursor()
+        
+        # 计算时间范围
+        end_time = int(datetime.now(BEIJING_TZ).timestamp() * 1000)
+        start_time = end_time - (hours * 60 * 60 * 1000)
+        
+        cursor.execute('''
+            SELECT timestamp, collect_time, volume, avg_3day, 
+                   deviation_percent, is_abnormal
+            FROM fund_monitor_aggregated
+            WHERE symbol = ?
+            AND interval_type = ?
+            AND timestamp >= ?
+            ORDER BY timestamp ASC
+        ''', (symbol.upper(), interval_type, start_time))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        history = []
+        for row in rows:
+            history.append({
+                'timestamp': row[0],
+                'collect_time': row[1],
+                'volume': round(row[2], 2),
+                'avg_3day': round(row[3], 2) if row[3] is not None else None,
+                'deviation_percent': round(row[4], 2) if row[4] is not None else None,
+                'is_abnormal': bool(row[5])
+            })
+        
+        return jsonify({
+            'success': True,
+            'symbol': symbol.upper(),
+            'interval_type': interval_type,
+            'hours': hours,
+            'data': history
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/api/fund-monitor/abnormal', methods=['GET'])
+def fund_monitor_abnormal():
+    """获取当前所有异常数据"""
+    try:
+        conn = sqlite3.connect('fund_monitor.db')
+        cursor = conn.cursor()
+        
+        # 获取最新异常数据
+        cursor.execute('''
+            SELECT symbol, interval_type, timestamp, collect_time, 
+                   volume, avg_3day, deviation_percent
+            FROM fund_monitor_aggregated
+            WHERE is_abnormal = 1
+            AND (symbol, interval_type, timestamp) IN (
+                SELECT symbol, interval_type, MAX(timestamp)
+                FROM fund_monitor_aggregated
+                WHERE is_abnormal = 1
+                GROUP BY symbol, interval_type
+            )
+            ORDER BY ABS(deviation_percent) DESC
+        ''')
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        abnormal_list = []
+        for row in rows:
+            abnormal_list.append({
+                'symbol': row[0],
+                'interval_type': row[1],
+                'timestamp': row[2],
+                'collect_time': row[3],
+                'volume': round(row[4], 2),
+                'avg_3day': round(row[5], 2) if row[5] is not None else None,
+                'deviation_percent': round(row[6], 2)
+            })
+        
+        return jsonify({
+            'success': True,
+            'count': len(abnormal_list),
+            'data': abnormal_list,
+            'update_time': datetime.now(BEIJING_TZ).strftime('%Y-%m-%d %H:%M:%S')
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/api/fund-monitor/config', methods=['GET', 'POST'])
+def fund_monitor_config():
+    """获取或更新资金监控配置"""
+    config_file = 'fund_monitor_config.json'
+    
+    try:
+        if request.method == 'GET':
+            # 读取配置
+            if os.path.exists(config_file):
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                config = {
+                    'threshold_percentage': 20.0,
+                    'lookback_days': 3,
+                    'collection_interval': 300
+                }
+            
+            return jsonify({
+                'success': True,
+                'config': config
+            })
+        
+        elif request.method == 'POST':
+            # 更新配置
+            data = request.json
+            
+            if not data:
+                return jsonify({
+                    'success': False,
+                    'error': '请提供配置数据'
+                }), 400
+            
+            # 读取现有配置或使用默认值
+            if os.path.exists(config_file):
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            else:
+                config = {
+                    'threshold_percentage': 20.0,
+                    'lookback_days': 3,
+                    'collection_interval': 300
+                }
+            
+            # 更新配置
+            if 'threshold_percentage' in data:
+                config['threshold_percentage'] = float(data['threshold_percentage'])
+            if 'lookback_days' in data:
+                config['lookback_days'] = int(data['lookback_days'])
+            if 'collection_interval' in data:
+                config['collection_interval'] = int(data['collection_interval'])
+            
+            # 保存配置
+            with open(config_file, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+            
+            return jsonify({
+                'success': True,
+                'message': '配置已更新',
+                'config': config
+            })
+            
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/api/fund-monitor/abnormal-history', methods=['GET'])
+def fund_monitor_abnormal_history():
+    """查询异常数据历史记录"""
+    try:
+        # 获取查询参数
+        date = request.args.get('date')  # 格式：YYYY-MM-DD
+        start_date = request.args.get('start_date')  # 格式：YYYY-MM-DD
+        end_date = request.args.get('end_date')  # 格式：YYYY-MM-DD
+        symbol = request.args.get('symbol')  # 币种
+        interval = request.args.get('interval')  # 时间周期
+        severity = request.args.get('severity')  # 严重程度
+        deviation_type = request.args.get('type')  # surge或drop
+        limit = int(request.args.get('limit', 100))  # 返回记录数
+        
+        conn = sqlite3.connect('fund_monitor.db')
+        cursor = conn.cursor()
+        
+        # 构建查询条件
+        conditions = []
+        params = []
+        
+        if date:
+            conditions.append('collect_date = ?')
+            params.append(date)
+        elif start_date and end_date:
+            conditions.append('collect_date BETWEEN ? AND ?')
+            params.extend([start_date, end_date])
+        elif start_date:
+            conditions.append('collect_date >= ?')
+            params.append(start_date)
+        elif end_date:
+            conditions.append('collect_date <= ?')
+            params.append(end_date)
+        
+        if symbol:
+            conditions.append('symbol = ?')
+            params.append(symbol.upper())
+        
+        if interval:
+            conditions.append('interval_type = ?')
+            params.append(interval)
+        
+        if severity:
+            conditions.append('severity = ?')
+            params.append(severity)
+        
+        if deviation_type:
+            conditions.append('deviation_type = ?')
+            params.append(deviation_type)
+        
+        where_clause = ' AND '.join(conditions) if conditions else '1=1'
+        
+        # 执行查询
+        query = f'''
+            SELECT id, symbol, interval_type, timestamp, collect_time, collect_date,
+                   volume, avg_3day, deviation_percent, deviation_type, severity
+            FROM fund_monitor_abnormal_history
+            WHERE {where_clause}
+            ORDER BY timestamp DESC
+            LIMIT ?
+        '''
+        params.append(limit)
+        
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        
+        # 格式化结果
+        history = []
+        for row in rows:
+            history.append({
+                'id': row[0],
+                'symbol': row[1],
+                'interval_type': row[2],
+                'timestamp': row[3],
+                'collect_time': row[4],
+                'collect_date': row[5],
+                'volume': round(row[6], 2),
+                'avg_3day': round(row[7], 2),
+                'deviation_percent': round(row[8], 2),
+                'deviation_type': row[9],
+                'severity': row[10]
+            })
+        
+        # 统计信息
+        cursor.execute(f'''
+            SELECT COUNT(*) FROM fund_monitor_abnormal_history
+            WHERE {where_clause}
+        ''', params[:-1])  # 去掉limit参数
+        total_count = cursor.fetchone()[0]
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'total_count': total_count,
+            'returned_count': len(history),
+            'data': history
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/api/fund-monitor/abnormal-dates', methods=['GET'])
+def fund_monitor_abnormal_dates():
+    """获取有异常数据的日期列表"""
+    try:
+        conn = sqlite3.connect('fund_monitor.db')
+        cursor = conn.cursor()
+        
+        # 查询所有有异常数据的日期及其统计
+        cursor.execute('''
+            SELECT collect_date, 
+                   COUNT(*) as count,
+                   COUNT(DISTINCT symbol) as affected_coins,
+                   AVG(ABS(deviation_percent)) as avg_deviation
+            FROM fund_monitor_abnormal_history
+            GROUP BY collect_date
+            ORDER BY collect_date DESC
+        ''')
+        
+        rows = cursor.fetchall()
+        
+        dates = []
+        for row in rows:
+            dates.append({
+                'date': row[0],
+                'count': row[1],
+                'affected_coins': row[2],
+                'avg_deviation': round(row[3], 2)
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'dates': dates
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/api/fund-monitor/abnormal-timeline', methods=['GET'])
+def fund_monitor_abnormal_timeline():
+    """获取异常数据时间轴（按小时聚合）"""
+    try:
+        date = request.args.get('date')  # YYYY-MM-DD
+        
+        if not date:
+            return jsonify({
+                'success': False,
+                'error': '请提供date参数'
+            }), 400
+        
+        conn = sqlite3.connect('fund_monitor.db')
+        cursor = conn.cursor()
+        
+        # 查询指定日期的所有异常数据
+        cursor.execute('''
+            SELECT symbol, interval_type, collect_time, volume, 
+                   avg_3day, deviation_percent, deviation_type, severity
+            FROM fund_monitor_abnormal_history
+            WHERE collect_date = ?
+            ORDER BY collect_time ASC
+        ''', (date,))
+        
+        rows = cursor.fetchall()
+        
+        # 按小时分组
+        timeline = {}
+        for row in rows:
+            collect_time = row[2]
+            hour = collect_time[:13]  # YYYY-MM-DD HH
+            
+            if hour not in timeline:
+                timeline[hour] = []
+            
+            timeline[hour].append({
+                'symbol': row[0],
+                'interval_type': row[1],
+                'time': collect_time,
+                'volume': round(row[3], 2),
+                'avg_3day': round(row[4], 2),
+                'deviation_percent': round(row[5], 2),
+                'deviation_type': row[6],
+                'severity': row[7]
+            })
+        
+        # 转换为列表格式
+        timeline_list = []
+        for hour, events in sorted(timeline.items()):
+            timeline_list.append({
+                'hour': hour,
+                'count': len(events),
+                'events': events
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'date': date,
+            'timeline': timeline_list
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+@app.route('/fund-monitor', methods=['GET'])
+def fund_monitor_page():
+    """资金监控系统前端页面"""
+    return render_template('fund_monitor.html')
+
+@app.route('/fund-monitor-history', methods=['GET'])
+def fund_monitor_history_page():
+    """资金监控异常历史查询页面"""
+    return render_template('fund_monitor_history.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
