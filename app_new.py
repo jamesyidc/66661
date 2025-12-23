@@ -9586,6 +9586,11 @@ def sar_slope_coin_detail(symbol):
     """单币种SAR详细数据页面"""
     return render_template('sar_slope_coin_detail.html', symbol=symbol)
 
+@app.route('/sar-slope/track/<symbol>')
+def sar_slope_single_tracking(symbol):
+    """单币种跟踪页面 - 显示完整历史数据"""
+    return render_template('sar_slope_single_tracking.html', symbol=symbol)
+
 @app.route('/api/sar-slope/coin/<symbol>/detail')
 def api_sar_slope_coin_detail(symbol):
     """获取单币种的5分钟级别详细SAR数据"""

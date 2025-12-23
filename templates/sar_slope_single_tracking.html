@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ symbol }} - 单币种跟踪</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .nav-buttons {
+            margin-top: 15px;
+        }
+
+        .nav-buttons a, .nav-buttons button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-right: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .nav-buttons a:hover, .nav-buttons button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .stat-card.long .value {
+            color: #48bb78;
+        }
+
+        .stat-card.short .value {
+            color: #f56565;
+        }
+
+        /* 说明卡片 */
+        .info-card {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .info-card h3 {
+            color: #856404;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-card h3::before {
+            content: "💡";
+            margin-right: 8px;
+        }
+
+        .info-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-card li {
+            color: #856404;
+            font-size: 14px;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .info-card li::before {
+            content: "•";
+            position: absolute;
+            left: 5px;
+            font-weight: bold;
+        }
+
+        .info-card .example {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #495057;
+        }
+
+        /* 数据表格 */
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-x: auto;
+        }
+
+        .table-container h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #f7fafc;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            color: #4a5568;
+            border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        /* 方向标识 */
+        .direction-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+            display: inline-block;
+        }
+
+        .direction-badge.long {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .direction-badge.short {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        /* 序号显示 */
+        .sequence-number {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            padding: 2px 8px;
+            background: #edf2f7;
+            border-radius: 4px;
+        }
+
+        /* 数值样式 */
+        .positive {
+            color: #48bb78;
+        }
+
+        .negative {
+            color: #f56565;
+        }
+
+        .neutral {
+            color: #718096;
+        }
+
+        /* 最新数据高亮 */
+        tr.latest {
+            background: #fffbeb;
+            font-weight: 600;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            table {
+                font-size: 11px;
+            }
+            
+            th, td {
+                padding: 8px 4px;
+            }
+        }
+
+        /* 加载动画 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60%, 100% { content: "..."; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>🔍 单币种跟踪</h1>
+            <div class="subtitle">{{ symbol }} - 完整历史数据</div>
+            
+            <div class="nav-buttons">
+                <a href="/sar-slope">← 返回主页</a>
+                <button onclick="refreshData()">🔄 刷新数据</button>
+            </div>
+        </div>
+
+        <!-- 当前状态统计 -->
+        <div class="stats-grid">
+            <div class="stat-card" id="currentDirectionCard">
+                <div class="label">当前方向</div>
+                <div class="value" id="currentDirection">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">当前序号</div>
+                <div class="value" id="currentSequence">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">当前SAR值</div>
+                <div class="value" id="currentSar">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">币价</div>
+                <div class="value" id="currentPrice">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">持续时间</div>
+                <div class="value" id="duration">-</div>
+            </div>
+        </div>
+
+        <!-- 平均值计算说明 -->
+        <div class="info-card">
+            <h3>平均值计算说明</h3>
+            <ul>
+                <li><strong>当天平均</strong>：计算当前方向下所有序号点的差值百分比平均</li>
+                <li><strong>3天平均</strong>：计算最近3天内相同方向的所有序号点的差值百分比平均</li>
+            </ul>
+            <div class="example">
+                <strong>例如：</strong>当前是 <span style="color: #f56565;">空头05</span>，那么：<br>
+                • 当天平均 = (空01差值% + 空02差值% + 空03差值% + 空04差值% + 空05差值%) / 5<br>
+                • 3天平均 = 最近3天内所有空头点的差值%平均<br>
+                <br>
+                <strong>重要：</strong>平均值是计算<u>序号点的平均</u>（如空01-空05），<strong>不是</strong>时间段内所有数据的平均
+            </div>
+        </div>
+
+        <!-- 完整数据表格 -->
+        <div class="table-container">
+            <h2>📊 完整历史数据</h2>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>日期时间</th>
+                        <th>方向</th>
+                        <th>序号</th>
+                        <th>币价</th>
+                        <th>SAR值</th>
+                        <th>持续时间(分钟)</th>
+                        <th>差值</th>
+                        <th>差值%</th>
+                        <th>当天平均%</th>
+                        <th>3天平均%</th>
+                        <th>7天平均%</th>
+                        <th>15天平均%</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="12" class="loading">加载数据中</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const symbol = "{{ symbol }}";
+        
+        // 加载数据
+        async function loadData() {
+            try {
+                const response = await fetch(`/api/sar-slope/history/${symbol}?days=30&limit=10000`);
+                const data = await response.json();
+                
+                if (data.success && data.data.length > 0) {
+                    updateStats(data.data[0]);
+                    renderTable(data.data);
+                } else {
+                    document.getElementById('tableBody').innerHTML = 
+                        '<tr><td colspan="12" style="text-align:center; padding:40px; color:#718096;">暂无数据</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                document.getElementById('tableBody').innerHTML = 
+                    '<tr><td colspan="12" style="text-align:center; padding:40px; color:#f56565;">数据加载失败</td></tr>';
+            }
+        }
+        
+        // 更新统计卡片
+        function updateStats(latest) {
+            document.getElementById('currentDirection').textContent = 
+                latest.sar_direction === 'long' ? '📈 多头' : '📉 空头';
+            document.getElementById('currentDirectionCard').className = 
+                'stat-card ' + latest.sar_direction;
+            
+            document.getElementById('currentSequence').textContent = 
+                (latest.sar_direction === 'long' ? '多' : '空') + 
+                String(latest.sequence_number).padStart(2, '0');
+            
+            document.getElementById('currentSar').textContent = 
+                latest.sar_value ? latest.sar_value.toFixed(6) : '-';
+            
+            document.getElementById('currentPrice').textContent = 
+                latest.price_close ? latest.price_close.toFixed(6) : '-';
+            
+            // 计算持续时间（序号 × 5分钟）
+            const minutes = latest.sequence_number * 5;
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            document.getElementById('duration').textContent = 
+                hours > 0 ? `${hours}小时${mins}分` : `${mins}分钟`;
+        }
+        
+        // 渲染表格
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            data.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                if (index === 0) tr.className = 'latest';
+                
+                // 计算持续时间
+                const minutes = row.sequence_number * 5;
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                const durationText = hours > 0 ? `${hours}h${mins}m` : `${mins}m`;
+                
+                tr.innerHTML = `
+                    <td>${row.datetime_beijing || '-'}</td>
+                    <td>
+                        <span class="direction-badge ${row.sar_direction}">
+                            ${row.sar_direction === 'long' ? '📈 多头' : '📉 空头'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="sequence-number">
+                            ${row.sar_direction === 'long' ? '多' : '空'}${String(row.sequence_number).padStart(2, '0')}
+                        </span>
+                    </td>
+                    <td>${row.price_close ? row.price_close.toFixed(6) : '-'}</td>
+                    <td>${row.sar_value ? row.sar_value.toFixed(6) : '-'}</td>
+                    <td>${durationText}</td>
+                    <td class="${row.sar_diff >= 0 ? 'positive' : 'negative'}">
+                        ${row.sar_diff != null ? row.sar_diff.toFixed(6) : '-'}
+                    </td>
+                    <td class="${row.sar_diff_percent >= 0 ? 'positive' : 'negative'}">
+                        ${row.sar_diff_percent != null ? row.sar_diff_percent.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_1day != null ? row.avg_1day.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_3day != null ? row.avg_3day.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_7day != null ? row.avg_7day.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_15day != null ? row.avg_15day.toFixed(6) + '%' : '-'}
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        // 刷新数据
+        function refreshData() {
+            document.getElementById('tableBody').innerHTML = 
+                '<tr><td colspan="12" class="loading">加载数据中</td></tr>';
+            loadData();
+        }
+        
+        // 页面加载时获取数据
+        document.addEventListener('DOMContentLoaded', loadData);
+        
+        // 每30秒自动刷新
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>
