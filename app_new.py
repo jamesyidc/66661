@@ -9412,61 +9412,51 @@ def gdrive_latest_data():
             'traceback': traceback.format_exc()
         }), 500
 
-# ==================== SAR斜率系统 API ====================
+# ==================== SAR斜率系统 V2.0 API ====================
 
 @app.route('/sar-slope')
 def sar_slope_page():
-    """SAR斜率系统页面"""
-    return render_template('sar_slope.html')
+    """SAR斜率系统V2.0页面"""
+    return render_template('sar_slope_v2.html')
 
 @app.route('/api/sar-slope/latest')
-def api_sar_slope_latest():
-    """获取所有币种的最新SAR斜率数据"""
+def api_sar_slope_latest_v2():
+    """获取所有币种的最新SAR斜率数据（V2.0）"""
     try:
-        symbol_filter = request.args.get('symbol', '').upper()
-        position_filter = request.args.get('position', '')  # bullish/bearish
-        
         conn = sqlite3.connect('crypto_data.db')
         cursor = conn.cursor()
         
         # 获取每个币种的最新记录
-        query = """
+        cursor.execute("""
             SELECT 
                 s.symbol,
                 s.datetime_beijing,
                 s.sar_value,
-                s.sar_position,
-                s.sar_quadrant,
-                s.position_duration,
-                s.slope_value,
-                s.slope_direction,
+                s.sar_direction,
+                s.sequence_number,
+                s.sar_diff,
+                s.sar_diff_percent,
+                s.avg_1day,
+                s.avg_3day,
+                s.avg_7day,
+                s.avg_15day,
+                s.is_anomaly,
+                s.anomaly_type,
+                s.deviation_percent,
+                s.is_extreme,
+                s.extreme_type,
+                s.price_open,
                 s.price_close,
                 s.timestamp
-            FROM sar_slope_data s
+            FROM sar_slope_v2 s
             INNER JOIN (
                 SELECT symbol, MAX(timestamp) as max_timestamp
-                FROM sar_slope_data
+                FROM sar_slope_v2
                 GROUP BY symbol
             ) latest ON s.symbol = latest.symbol AND s.timestamp = latest.max_timestamp
-        """
+            ORDER BY s.symbol
+        """)
         
-        conditions = []
-        params = []
-        
-        if symbol_filter:
-            conditions.append("s.symbol LIKE ?")
-            params.append(f"%{symbol_filter}%")
-        
-        if position_filter:
-            conditions.append("s.sar_position = ?")
-            params.append(position_filter)
-        
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-        
-        query += " ORDER BY s.symbol"
-        
-        cursor.execute(query, params)
         rows = cursor.fetchall()
         
         results = []
@@ -9475,31 +9465,34 @@ def api_sar_slope_latest():
                 'symbol': row[0],
                 'datetime': row[1],
                 'sar_value': round(row[2], 6) if row[2] else None,
-                'sar_position': row[3],
-                'sar_quadrant': row[4],
-                'position_duration': row[5],
-                'slope_value': round(row[6], 4) if row[6] else None,
-                'slope_direction': row[7],
-                'price': round(row[8], 6) if row[8] else None,
-                'timestamp': row[9]
+                'direction': row[3],
+                'sequence': row[4],
+                'diff': round(row[5], 6) if row[5] else None,
+                'diff_percent': round(row[6], 6) if row[6] else None,
+                'avg_1day': round(row[7], 6) if row[7] else None,
+                'avg_3day': round(row[8], 6) if row[8] else None,
+                'avg_7day': round(row[9], 6) if row[9] else None,
+                'avg_15day': round(row[10], 6) if row[10] else None,
+                'is_anomaly': bool(row[11]),
+                'anomaly_type': row[12],
+                'deviation_percent': round(row[13], 2) if row[13] else None,
+                'is_extreme': bool(row[14]),
+                'extreme_type': row[15],
+                'price_open': round(row[16], 2) if row[16] else None,
+                'price_close': round(row[17], 2) if row[17] else None,
+                'timestamp': row[18]
             })
         
-        # 获取统计信息
-        cursor.execute("""
-            SELECT 
-                COUNT(*) as total,
-                SUM(CASE WHEN current_position = 'bullish' THEN 1 ELSE 0 END) as bullish_count,
-                SUM(CASE WHEN current_position = 'bearish' THEN 1 ELSE 0 END) as bearish_count,
-                AVG(position_duration) as avg_duration
-            FROM sar_position_stats
-        """)
+        # 统计信息
+        long_count = sum(1 for r in results if r['direction'] == 'long')
+        short_count = sum(1 for r in results if r['direction'] == 'short')
+        anomaly_count = sum(1 for r in results if r['is_anomaly'])
         
-        stats_row = cursor.fetchone()
         stats = {
-            'total_symbols': stats_row[0],
-            'bullish_count': stats_row[1],
-            'bearish_count': stats_row[2],
-            'avg_duration': round(stats_row[3], 1) if stats_row[3] else 0
+            'total_symbols': len(results),
+            'long_count': long_count,
+            'short_count': short_count,
+            'anomaly_count': anomaly_count
         }
         
         conn.close()
@@ -9520,13 +9513,12 @@ def api_sar_slope_latest():
         }), 500
 
 @app.route('/api/sar-slope/history/<symbol>')
-def api_sar_slope_history(symbol):
-    """获取指定币种的SAR斜率历史数据（默认48小时）"""
+def api_sar_slope_history_v2(symbol):
+    """获取指定币种的SAR斜率历史数据"""
     try:
-        days = int(request.args.get('days', 2))
-        limit = int(request.args.get('limit', 600))
+        days = int(request.args.get('days', 7))
+        limit = int(request.args.get('limit', 1000))
         
-        # 计算起始时间戳
         start_time = int((datetime.now() - timedelta(days=days)).timestamp() * 1000)
         
         conn = sqlite3.connect('crypto_data.db')
@@ -9537,14 +9529,16 @@ def api_sar_slope_history(symbol):
                 timestamp,
                 datetime_beijing,
                 sar_value,
-                sar_position,
-                sar_quadrant,
-                position_duration,
-                slope_value,
-                slope_direction,
+                sar_direction,
+                sequence_number,
+                sar_diff,
+                sar_diff_percent,
+                avg_3day,
+                is_anomaly,
+                is_extreme,
                 price_open,
                 price_close
-            FROM sar_slope_data
+            FROM sar_slope_v2
             WHERE symbol = ? AND timestamp >= ?
             ORDER BY timestamp DESC
             LIMIT ?
@@ -9558,13 +9552,15 @@ def api_sar_slope_history(symbol):
                 'timestamp': row[0],
                 'datetime': row[1],
                 'sar_value': round(row[2], 6) if row[2] else None,
-                'sar_position': row[3],
-                'sar_quadrant': row[4],
-                'position_duration': row[5],
-                'slope_value': round(row[6], 4) if row[6] else None,
-                'slope_direction': row[7],
-                'price_open': round(row[8], 6) if row[8] else None,
-                'price': round(row[9], 6) if row[9] else None
+                'direction': row[3],
+                'sequence': row[4],
+                'diff': round(row[5], 6) if row[5] else None,
+                'diff_percent': round(row[6], 6) if row[6] else None,
+                'avg_3day': round(row[7], 6) if row[7] else None,
+                'is_anomaly': bool(row[8]),
+                'is_extreme': bool(row[9]),
+                'price_open': round(row[10], 2) if row[10] else None,
+                'price_close': round(row[11], 2) if row[11] else None
             })
         
         conn.close()
@@ -9585,218 +9581,6 @@ def api_sar_slope_history(symbol):
             'traceback': traceback.format_exc()
         }), 500
 
-@app.route('/api/sar-slope/position-changes/<symbol>')
-def api_sar_slope_position_changes(symbol):
-    """获取指定币种的SAR位置变化历史"""
-    try:
-        days = int(request.args.get('days', 7))
-        start_time = int((datetime.now() - timedelta(days=days)).timestamp() * 1000)
-        
-        conn = sqlite3.connect('crypto_data.db')
-        cursor = conn.cursor()
-        
-        # 查找位置变化点
-        cursor.execute("""
-            WITH position_changes AS (
-                SELECT 
-                    timestamp,
-                    datetime_beijing,
-                    sar_value,
-                    sar_position,
-                    position_duration,
-                    price_close,
-                    LAG(sar_position) OVER (ORDER BY timestamp) as prev_position
-                FROM sar_slope_data
-                WHERE symbol = ? AND timestamp >= ?
-            )
-            SELECT 
-                timestamp,
-                datetime_beijing,
-                sar_value,
-                sar_position,
-                position_duration,
-                price_close
-            FROM position_changes
-            WHERE prev_position IS NULL OR sar_position != prev_position
-            ORDER BY timestamp DESC
-            LIMIT 100
-        """, (symbol, start_time))
-        
-        rows = cursor.fetchall()
-        
-        results = []
-        for row in rows:
-            results.append({
-                'timestamp': row[0],
-                'datetime': row[1],
-                'sar_value': round(row[2], 6) if row[2] else None,
-                'position': row[3],
-                'duration': row[4],
-                'price': round(row[5], 6) if row[5] else None
-            })
-        
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'symbol': symbol,
-            'days': days,
-            'data': results,
-            'count': len(results)
-        })
-        
-    except Exception as e:
-        import traceback
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }), 500
-
-@app.route('/api/sar-slope/collector-status')
-def api_sar_slope_collector_status():
-    """获取SAR斜率采集器状态"""
-    try:
-        conn = sqlite3.connect('crypto_data.db')
-        cursor = conn.cursor()
-        
-        # 获取最新数据时间
-        cursor.execute("""
-            SELECT MAX(timestamp) FROM sar_slope_data
-        """)
-        
-        latest_timestamp = cursor.fetchone()[0]
-        
-        if latest_timestamp:
-            latest_dt = datetime.utcfromtimestamp(latest_timestamp / 1000)
-            latest_dt_beijing = latest_dt.replace(tzinfo=pytz.UTC).astimezone(BEIJING_TZ)
-            latest_time = latest_dt_beijing.strftime('%Y-%m-%d %H:%M:%S')
-            
-            # 计算延迟
-            now = datetime.now(BEIJING_TZ)
-            delay_minutes = (now - latest_dt_beijing).total_seconds() / 60
-        else:
-            latest_time = None
-            delay_minutes = None
-        
-        # 获取数据统计
-        cursor.execute("""
-            SELECT COUNT(*) FROM sar_slope_data
-        """)
-        total_records = cursor.fetchone()[0]
-        
-        # 获取各币种数据量
-        cursor.execute("""
-            SELECT symbol, COUNT(*) as count
-            FROM sar_slope_data
-            GROUP BY symbol
-            ORDER BY count DESC
-        """)
-        
-        symbol_counts = [{'symbol': row[0], 'count': row[1]} for row in cursor.fetchall()]
-        
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'status': {
-                'latest_time': latest_time,
-                'delay_minutes': round(delay_minutes, 1) if delay_minutes else None,
-                'is_delayed': delay_minutes > 10 if delay_minutes else True,
-                'total_records': total_records,
-                'symbol_counts': symbol_counts
-            }
-        })
-        
-    except Exception as e:
-        import traceback
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }), 500
-
-# ==================== Telegram 配置管理 API ====================
-
-@app.route('/api/telegram/config', methods=['GET', 'POST'])
-def telegram_config_api():
-    """
-    获取或更新 Telegram 配置
-    GET: 返回当前配置
-    POST: 更新配置
-    """
-    config_file = 'telegram_config.json'
-    
-    try:
-        if request.method == 'GET':
-            # 读取当前配置
-            if not os.path.exists(config_file):
-                return jsonify({
-                    'success': False,
-                    'error': '配置文件不存在'
-                }), 404
-            
-            with open(config_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-            
-            return jsonify({
-                'success': True,
-                'config': config
-            })
-        
-        elif request.method == 'POST':
-            # 更新配置
-            data = request.json
-            
-            if not data:
-                return jsonify({
-                    'success': False,
-                    'error': '请提供配置数据'
-                }), 400
-            
-            # 读取现有配置
-            if not os.path.exists(config_file):
-                return jsonify({
-                    'success': False,
-                    'error': '配置文件不存在'
-                }), 404
-            
-            with open(config_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-            
-            # 更新信号类型的启用状态
-            if 'buy' in data:
-                config['signal_types']['buy']['enabled'] = data['buy']
-            if 'sell' in data:
-                config['signal_types']['sell']['enabled'] = data['sell']
-            if 'double_buy' in data:
-                config['signal_types']['double_buy']['enabled'] = data['double_buy']
-            if 'double_sell' in data:
-                config['signal_types']['double_sell']['enabled'] = data['double_sell']
-            
-            # 备份原配置
-            backup_file = f'telegram_config_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
-            with open(backup_file, 'w', encoding='utf-8') as f:
-                json.dump(config, f, indent=2, ensure_ascii=False)
-            
-            # 保存新配置
-            with open(config_file, 'w', encoding='utf-8') as f:
-                json.dump(config, f, indent=2, ensure_ascii=False)
-            
-            return jsonify({
-                'success': True,
-                'message': '配置已更新',
-                'config': config,
-                'backup_file': backup_file
-            })
-            
-    except Exception as e:
-        import traceback
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }), 500
 
 # ==================== 资金监控系统 API ====================
 
