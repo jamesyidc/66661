@@ -328,20 +328,47 @@
 
         <!-- 平均值计算说明 -->
         <div class="info-card">
-            <h3>平均值计算说明</h3>
+            <h3>平均值、偏离与交易信号说明</h3>
             <ul>
                 <li><strong>当天平均</strong>：计算该币种在当天所有<u>相同序号位置</u>的差值百分比平均</li>
                 <li><strong>3天平均</strong>：计算该币种在最近3天所有<u>相同序号位置</u>的差值百分比平均</li>
+                <li><strong>偏离%</strong>：当前差值%相对于当天平均的偏离百分比 = (差值% - 当天平均%) ÷ 当天平均% × 100</li>
+                <li><strong>交易信号</strong>：根据方向和偏离%自动判断交易倾向</li>
             </ul>
+            
+            <div class="example" style="border: 2px solid #667eea; padding: 15px; margin-bottom: 15px; background: #f7fafc;">
+                <strong style="color: #667eea; font-size: 16px;">📊 交易信号判断逻辑：</strong><br><br>
+                
+                <strong style="color: #48bb78;">1️⃣ 多头区间（📈）：</strong><br>
+                • <span style="color: #f56565;">偏离增加 (+偏离%) → 加速赶顶 → 🔴 偏空信号</span><br>
+                &nbsp;&nbsp;含义：波动超出历史水平，可能超买，警惕见顶回落<br>
+                • <span style="color: #48bb78;">偏离减小 (-偏离%) → 多头强势 → 🟢 偏多信号</span><br>
+                &nbsp;&nbsp;含义：波动低于历史水平，趋势稳健，多头持续性强<br><br>
+                
+                <strong style="color: #f56565;">2️⃣ 空头区间（📉）：</strong><br>
+                • <span style="color: #48bb78;">偏离增加 (+偏离%) → 加速赶底 → 🟢 偏多信号</span><br>
+                &nbsp;&nbsp;含义：波动超出历史水平，可能超卖，警惕见底反弹<br>
+                • <span style="color: #f56565;">偏离减小 (-偏离%) → 强势空头 → 🔴 偏空信号</span><br>
+                &nbsp;&nbsp;含义：波动低于历史水平，趋势稳健，空头持续性强<br>
+            </div>
+            
             <div class="example">
                 <strong>例如：</strong>当前是 <span style="color: #f56565;">空头05</span>，那么：<br>
                 • 当天平均 = 该币种今天所有出现"空05"位置的差值%平均<br>
                 • 3天平均 = 该币种最近3天所有出现"空05"位置的差值%平均<br>
                 <br>
+                <strong>偏离%示例：</strong><br>
+                • 当前差值% = 0.03703%，当天平均% = 0.02429%<br>
+                • 偏离% = (0.03703 - 0.02429) ÷ 0.02429 × 100 = <span style="color: #48bb78;">+52.44%</span><br>
+                • 表示当前差值比平均值<u>高出52.44%</u>（异常偏高）<br>
+                • 如果在多头区间：🔴 偏空（加速赶顶）<br>
+                • 如果在空头区间：🟢 偏多（加速赶底）<br>
+                <br>
                 <strong>重要：</strong><br>
                 • 每个币种<u>独立计算</u>自己的平均值<br>
                 • 平均的是<u>相同序号位置</u>（如空05），不是空01、02、03、04、05的纵向平均<br>
-                • 是该币种历史上所有"空05"这个位置的横向对比平均
+                • 是该币种历史上所有"空05"这个位置的横向对比平均<br>
+                • <span style="color: #48bb78;">🟢 偏多信号</span> 倾向看涨，<span style="color: #f56565;">🔴 偏空信号</span> 倾向看跌
             </div>
         </div>
 
@@ -360,6 +387,8 @@
                         <th>差值</th>
                         <th>差值%</th>
                         <th>当天平均%</th>
+                        <th>偏离%</th>
+                        <th>信号</th>
                         <th>3天平均%</th>
                         <th>7天平均%</th>
                         <th>15天平均%</th>
@@ -367,7 +396,7 @@
                 </thead>
                 <tbody id="tableBody">
                     <tr>
-                        <td colspan="12" class="loading">加载数据中</td>
+                        <td colspan="14" class="loading">加载数据中</td>
                     </tr>
                 </tbody>
             </table>
@@ -388,12 +417,12 @@
                     renderTable(data.data);
                 } else {
                     document.getElementById('tableBody').innerHTML = 
-                        '<tr><td colspan="12" style="text-align:center; padding:40px; color:#718096;">暂无数据</td></tr>';
+                        '<tr><td colspan="14" style="text-align:center; padding:40px; color:#718096;">暂无数据</td></tr>';
                 }
             } catch (error) {
                 console.error('加载数据失败:', error);
                 document.getElementById('tableBody').innerHTML = 
-                    '<tr><td colspan="12" style="text-align:center; padding:40px; color:#f56565;">数据加载失败</td></tr>';
+                    '<tr><td colspan="14" style="text-align:center; padding:40px; color:#f56565;">数据加载失败</td></tr>';
             }
         }
         
@@ -437,6 +466,51 @@
                 const mins = minutes % 60;
                 const durationText = hours > 0 ? `${hours}h${mins}m` : `${mins}m`;
                 
+                // 计算偏离百分比：(差值% - 当天平均%) / 当天平均% × 100
+                let deviationPercent = null;
+                let deviationClass = 'neutral';
+                let deviationText = '-';
+                
+                if (row.sar_diff_percent != null && row.avg_1day != null && row.avg_1day !== 0) {
+                    deviationPercent = ((row.sar_diff_percent - row.avg_1day) / row.avg_1day) * 100;
+                    deviationClass = deviationPercent > 0 ? 'positive' : (deviationPercent < 0 ? 'negative' : 'neutral');
+                    const sign = deviationPercent > 0 ? '+' : '';
+                    deviationText = `${sign}${deviationPercent.toFixed(2)}%`;
+                }
+                
+                // 判断交易信号
+                // 多头区间: 偏离增加(+) → 加速赶顶 → 偏空; 偏离减小(-) → 多头强势 → 偏多
+                // 空头区间: 偏离增加(+) → 加速赶底 → 偏多; 偏离减小(-) → 强势空头 → 偏空
+                let signalText = '-';
+                let signalClass = 'neutral';
+                let signalEmoji = '';
+                
+                if (deviationPercent !== null) {
+                    if (row.sar_direction === 'long') {
+                        // 多头区间
+                        if (deviationPercent > 0) {
+                            signalText = '偏空';
+                            signalClass = 'negative';
+                            signalEmoji = '🔴';
+                        } else if (deviationPercent < 0) {
+                            signalText = '偏多';
+                            signalClass = 'positive';
+                            signalEmoji = '🟢';
+                        }
+                    } else {
+                        // 空头区间
+                        if (deviationPercent > 0) {
+                            signalText = '偏多';
+                            signalClass = 'positive';
+                            signalEmoji = '🟢';
+                        } else if (deviationPercent < 0) {
+                            signalText = '偏空';
+                            signalClass = 'negative';
+                            signalEmoji = '🔴';
+                        }
+                    }
+                }
+                
                 tr.innerHTML = `
                     <td>${row.datetime_beijing || '-'}</td>
                     <td>
@@ -461,6 +535,12 @@
                     <td class="neutral">
                         ${row.avg_1day != null ? row.avg_1day.toFixed(6) + '%' : '-'}
                     </td>
+                    <td class="${deviationClass}" style="font-weight: 600;">
+                        ${deviationText}
+                    </td>
+                    <td class="${signalClass}" style="font-weight: 700; font-size: 13px;">
+                        ${signalEmoji} ${signalText}
+                    </td>
                     <td class="neutral">
                         ${row.avg_3day != null ? row.avg_3day.toFixed(6) + '%' : '-'}
                     </td>
@@ -479,7 +559,7 @@
         // 刷新数据
         function refreshData() {
             document.getElementById('tableBody').innerHTML = 
-                '<tr><td colspan="12" class="loading">加载数据中</td></tr>';
+                '<tr><td colspan="14" class="loading">加载数据中</td></tr>';
             loadData();
         }
         

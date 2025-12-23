@@ -9533,7 +9533,10 @@ def api_sar_slope_history_v2(symbol):
                 sequence_number,
                 sar_diff,
                 sar_diff_percent,
+                avg_1day,
                 avg_3day,
+                avg_7day,
+                avg_15day,
                 is_anomaly,
                 is_extreme,
                 price_open,
@@ -9550,17 +9553,20 @@ def api_sar_slope_history_v2(symbol):
         for row in rows:
             results.append({
                 'timestamp': row[0],
-                'datetime': row[1],
+                'datetime_beijing': row[1],
                 'sar_value': round(row[2], 6) if row[2] else None,
-                'direction': row[3],
-                'sequence': row[4],
-                'diff': round(row[5], 6) if row[5] else None,
-                'diff_percent': round(row[6], 6) if row[6] else None,
-                'avg_3day': round(row[7], 6) if row[7] else None,
-                'is_anomaly': bool(row[8]),
-                'is_extreme': bool(row[9]),
-                'price_open': round(row[10], 2) if row[10] else None,
-                'price_close': round(row[11], 2) if row[11] else None
+                'sar_direction': row[3],
+                'sequence_number': row[4],
+                'sar_diff': round(row[5], 6) if row[5] else None,
+                'sar_diff_percent': round(row[6], 6) if row[6] else None,
+                'avg_1day': round(row[7], 6) if row[7] else None,
+                'avg_3day': round(row[8], 6) if row[8] else None,
+                'avg_7day': round(row[9], 6) if row[9] else None,
+                'avg_15day': round(row[10], 6) if row[10] else None,
+                'is_anomaly': bool(row[11]),
+                'is_extreme': bool(row[12]),
+                'price_open': round(row[13], 2) if row[13] else None,
+                'price_close': round(row[14], 2) if row[14] else None
             })
         
         conn.close()

@@ -208,6 +208,29 @@
             font-size: 13px;
             margin-top: 20px;
         }
+        
+        /* 历史表格样式 */
+        .history-table-container {
+            margin-top: 25px;
+        }
+        
+        .history-table-container table tbody tr.latest {
+            background: #fef3c7 !important;
+            font-weight: 600;
+        }
+        
+        .history-table-container .sequence-number {
+            display: inline-block;
+            padding: 3px 10px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .history-table-container .neutral {
+            color: #718096;
+        }
 
         .filter-section {
             background: white;
@@ -465,6 +488,36 @@
                     <div class="value" id="detail-avg-15day">-</div>
                 </div>
             </div>
+            
+            <!-- 历史数据表格 -->
+            <div class="history-table-container" id="history-table-container" style="margin-top: 25px; display: none;">
+                <h4 style="color: #2d3748; margin-bottom: 15px; font-size: 16px;">📊 完整历史数据（最近30天）</h4>
+                <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+                    <table style="width: 100%; font-size: 13px;">
+                        <thead style="position: sticky; top: 0; background: #f7fafc; z-index: 10;">
+                            <tr>
+                                <th>日期时间</th>
+                                <th>方向</th>
+                                <th>序号</th>
+                                <th>币价</th>
+                                <th>SAR值</th>
+                                <th>持续时间</th>
+                                <th>差值</th>
+                                <th>差值%</th>
+                                <th>当天平均%</th>
+                                <th>偏离%</th>
+                                <th>信号</th>
+                                <th>3天平均%</th>
+                                <th>7天平均%</th>
+                                <th>15天平均%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <tr><td colspan="14" style="text-align:center; padding:40px; color:#718096;">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <div class="stats-row">
@@ -687,6 +740,135 @@
             const detailElement = document.getElementById('coin-detail');
             detailElement.classList.add('active');
             detailElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // 加载历史数据
+            loadHistoryData(selectedSymbol);
+        }
+        
+        function loadHistoryData(symbol) {
+            const historyTableBody = document.getElementById('history-table-body');
+            const historyTableContainer = document.getElementById('history-table-container');
+            
+            // 显示加载状态
+            historyTableBody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:40px; color:#718096;">加载中...</td></tr>';
+            historyTableContainer.style.display = 'block';
+            
+            // 获取历史数据
+            fetch(`/api/sar-slope/history/${symbol}?days=30&limit=10000`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data.length > 0) {
+                        renderHistoryTable(data.data);
+                    } else {
+                        historyTableBody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:40px; color:#718096;">暂无数据</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('加载历史数据失败:', error);
+                    historyTableBody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:40px; color:#f56565;">加载失败</td></tr>';
+                });
+        }
+        
+        function renderHistoryTable(data) {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+            
+            data.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                if (index === 0) tr.className = 'latest';
+                
+                // 计算持续时间
+                const minutes = row.sequence_number * 5;
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                const durationText = hours > 0 ? `${hours}h${mins}m` : `${mins}m`;
+                
+                // 计算偏离百分比：(差值% - 当天平均%) / 当天平均% × 100
+                let deviationPercent = null;
+                let deviationClass = 'neutral';
+                let deviationText = '-';
+                
+                if (row.sar_diff_percent != null && row.avg_1day != null && row.avg_1day !== 0) {
+                    deviationPercent = ((row.sar_diff_percent - row.avg_1day) / row.avg_1day) * 100;
+                    deviationClass = deviationPercent > 0 ? 'positive' : (deviationPercent < 0 ? 'negative' : 'neutral');
+                    const sign = deviationPercent > 0 ? '+' : '';
+                    deviationText = `${sign}${deviationPercent.toFixed(2)}%`;
+                }
+                
+                // 判断交易信号
+                let signalText = '-';
+                let signalClass = 'neutral';
+                let signalEmoji = '';
+                
+                if (deviationPercent !== null) {
+                    if (row.sar_direction === 'long') {
+                        // 多头区间
+                        if (deviationPercent > 0) {
+                            signalText = '偏空';
+                            signalClass = 'negative';
+                            signalEmoji = '🔴';
+                        } else if (deviationPercent < 0) {
+                            signalText = '偏多';
+                            signalClass = 'positive';
+                            signalEmoji = '🟢';
+                        }
+                    } else {
+                        // 空头区间
+                        if (deviationPercent > 0) {
+                            signalText = '偏多';
+                            signalClass = 'positive';
+                            signalEmoji = '🟢';
+                        } else if (deviationPercent < 0) {
+                            signalText = '偏空';
+                            signalClass = 'negative';
+                            signalEmoji = '🔴';
+                        }
+                    }
+                }
+                
+                tr.innerHTML = `
+                    <td>${row.datetime_beijing || '-'}</td>
+                    <td>
+                        <span class="direction-badge ${row.sar_direction}">
+                            ${row.sar_direction === 'long' ? '📈 多头' : '📉 空头'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="sequence-number">
+                            ${row.sar_direction === 'long' ? '多' : '空'}${String(row.sequence_number).padStart(2, '0')}
+                        </span>
+                    </td>
+                    <td>${row.price_close ? row.price_close.toFixed(6) : '-'}</td>
+                    <td>${row.sar_value ? row.sar_value.toFixed(6) : '-'}</td>
+                    <td>${durationText}</td>
+                    <td class="${row.sar_diff >= 0 ? 'positive' : 'negative'}">
+                        ${row.sar_diff != null ? row.sar_diff.toFixed(6) : '-'}
+                    </td>
+                    <td class="${row.sar_diff_percent >= 0 ? 'positive' : 'negative'}">
+                        ${row.sar_diff_percent != null ? row.sar_diff_percent.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_1day != null ? row.avg_1day.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="${deviationClass}" style="font-weight: 600;">
+                        ${deviationText}
+                    </td>
+                    <td class="${signalClass}" style="font-weight: 700; font-size: 13px;">
+                        ${signalEmoji} ${signalText}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_3day != null ? row.avg_3day.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_7day != null ? row.avg_7day.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_15day != null ? row.avg_15day.toFixed(6) + '%' : '-'}
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
         }
 
         function clearCoinDetail() {
@@ -694,6 +876,7 @@
             document.getElementById('coin-detail').classList.remove('active');
             document.getElementById('view-track-link').style.display = 'none';
             document.getElementById('view-chart-link').style.display = 'none';
+            document.getElementById('history-table-container').style.display = 'none';
         }
 
         // 页面加载时自动获取数据
