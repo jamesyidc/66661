@@ -539,7 +539,7 @@ def cleanup_old_data():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    cutoff = int((datetime.now() - timedelta(days=10)).timestamp() * 1000)
+    cutoff = int((datetime.now() - timedelta(days=16)).timestamp() * 1000)
     
     cursor.execute("DELETE FROM sar_slope_v2 WHERE timestamp < ?", (cutoff,))
     deleted = cursor.rowcount
@@ -548,7 +548,7 @@ def cleanup_old_data():
     conn.close()
     
     if deleted > 0:
-        print(f"🧹 Cleaned {deleted} old records (>10 days)")
+        print(f"🧹 Cleaned {deleted} old records (>16 days)")
 
 def main():
     """主循环"""
@@ -557,7 +557,7 @@ def main():
     print(f"📊 Symbols: {len(MONITORED_SYMBOLS)}")
     print(f"⏱️  Interval: 5 minutes")
     print(f"⚠️  Anomaly Threshold: {ANOMALY_THRESHOLD}%")
-    print(f"💾 Retention: 10 days")
+    print(f"💾 Retention: 16 days")
     
     init_database()
     collect_all_symbols()
