@@ -77,7 +77,7 @@ class TelegramNotifier:
             return False
     
     def format_buy_signal(self, signal_data):
-        """格式化抄底信号消息（支撑线1+支撑线2总数>=8，强信号！）"""
+        """格式化抄底信号消息（支撑线1>=8 AND 支撑线2>=8，强信号！）"""
         # 获取支撑线统计
         s1_count = signal_data.get('support_s1_count', 0)
         s2_count = signal_data.get('support_s2_count', 0)
@@ -97,15 +97,16 @@ class TelegramNotifier:
 ━━━━━━━━━━━━━━━━━━━━━━
 
 ⏰ 触发时间: {signal_data['time']}
-📊 <b>总触碰数: {total_count}个币种</b>
-   ├─ 支撑线1: {s1_count}个币种
-   └─ 支撑线2: {s2_count}个币种
+📊 <b>双线同步达标：</b>
+   ✅ 支撑线1: {s1_count}个币种 (>=8)
+   ✅ 支撑线2: {s2_count}个币种 (>=8)
+   📈 总触碰数: {total_count}个币种
 
 🔥 <b>信号强度: 🟢🟢🟢 强势买入 🟢🟢🟢</b>
 
 💰 <b>关键提示</b>:
-   • 多个币种同时触碰支撑线
-   • 市场可能存在反弹机会
+   • 支撑1和支撑2都达到强势标准
+   • 市场可能存在强劲反弹机会
    • 建议关注潜在买入点
    • 注意仓位管理和风控
 
@@ -425,20 +426,22 @@ class TelegramNotifier:
                 self.log(f"📊 双重抄底信号币种数不足 ({double_buy_data['count']} < {min_coins_double_buy})，跳过推送")
         
         # 处理普通抄底信号（强势信号！）
+        # 注意：强势抄底要求支撑1和支撑2都要达到阈值（不是相加）
         if buy_data and self.config['signal_types']['buy']['enabled']:
             min_coins_buy = self.config['signal_types'].get('buy', {}).get('min_coins', self.config['push_conditions']['min_coins'])
             s1_count = buy_data.get('support_s1_count', 0)
             s2_count = buy_data.get('support_s2_count', 0)
-            if buy_data['count'] >= min_coins_buy:
+            # 修改逻辑：支撑1和支撑2都要 >= min_coins_buy（不是相加）
+            if s1_count >= min_coins_buy and s2_count >= min_coins_buy:
                 if self.check_cooldown('buy'):
-                    self.log(f"✅✅✅ 检测到强势抄底信号！总数: {buy_data['count']}个币种 (支撑1: {s1_count}个 + 支撑2: {s2_count}个)")
+                    self.log(f"✅✅✅ 检测到强势抄底信号！支撑1: {s1_count}个币种 >= {min_coins_buy}, 支撑2: {s2_count}个币种 >= {min_coins_buy}")
                     message = self.format_buy_signal(buy_data)
                     if self.send_message(message):
                         self.last_buy_signal_time = datetime.now(BEIJING_TZ)
                 else:
                     self.log(f"⏳ 抄底信号在冷却期，跳过推送")
             else:
-                self.log(f"📊 抄底信号币种数不足 ({buy_data['count']} < {min_coins_buy}，支撑1: {s1_count}个, 支撑2: {s2_count}个)，跳过推送")
+                self.log(f"📊 抄底信号条件不满足 (支撑1: {s1_count}个, 支撑2: {s2_count}个, 都需 >= {min_coins_buy})，跳过推送")
         
         # 优先处理双重逃顶信号（更强信号）
         if double_sell_data and self.config['signal_types'].get('double_sell', {}).get('enabled', False):
