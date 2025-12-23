@@ -274,38 +274,40 @@ def calculate_diff_and_percent(current_sar: float, previous_sar: float) -> Tuple
     percent = (diff / previous_sar * 100) if previous_sar != 0 else 0.0
     return diff, percent
 
-def calculate_rolling_averages(symbol: str, direction: str, timestamp: int) -> Dict[str, float]:
-    """计算滚动平均值（1天、3天、7天、15天）"""
+def calculate_rolling_averages(symbol: str, direction: str, sequence_number: int, timestamp: int) -> Dict[str, float]:
+    """计算滚动平均值（1天、3天、7天、15天）
+    
+    重要：计算相同序号位置的差值%平均，不是时间段内所有数据的平均
+    例如：序号05的1日均 = 最近1天内所有序号05位置的差值%平均
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # 1天 = 288根K线（24小时 * 12 K线/小时）
-    # 3天 = 864根K线
-    # 7天 = 2016根K线
-    # 15天 = 4320根K线
-    
+    # 时间范围（天数转换为毫秒）
     periods = {
-        'avg_1day': 288,
-        'avg_3day': 864,
-        'avg_7day': 2016,
-        'avg_15day': 4320
+        'avg_1day': 1,    # 1天
+        'avg_3day': 3,    # 3天
+        'avg_7day': 7,    # 7天
+        'avg_15day': 15   # 15天
     }
     
     averages = {}
     
-    for period_name, kline_count in periods.items():
-        # 计算时间范围
-        start_timestamp = timestamp - (kline_count * 300000)  # 5分钟 = 300000毫秒
+    for period_name, days in periods.items():
+        # 计算时间范围（天数 * 24小时 * 3600秒 * 1000毫秒）
+        start_timestamp = timestamp - (days * 24 * 3600 * 1000)
         
+        # 查询相同序号位置的差值%平均
         cursor.execute("""
             SELECT AVG(sar_diff_percent)
             FROM sar_slope_v2
             WHERE symbol = ? 
               AND sar_direction = ? 
+              AND sequence_number = ?
               AND timestamp >= ? 
               AND timestamp <= ?
               AND sar_diff_percent IS NOT NULL
-        """, (symbol, direction, start_timestamp, timestamp))
+        """, (symbol, direction, sequence_number, start_timestamp, timestamp))
         
         row = cursor.fetchone()
         averages[period_name] = row[0] if (row and row[0] is not None) else None
@@ -465,8 +467,8 @@ def process_symbol(symbol: str) -> bool:
             update_current_state(symbol, direction, timestamp, sar_value, 
                                sequence, datetime_beijing)
         
-        # 6. 计算滚动平均值
-        averages = calculate_rolling_averages(symbol, direction, timestamp)
+        # 6. 计算滚动平均值（基于相同序号位置）
+        averages = calculate_rolling_averages(symbol, direction, sequence, timestamp)
         
         # 7. 异常检测
         is_anomaly = False
