@@ -471,7 +471,7 @@
                 const directionEmoji = item.direction === 'long' ? '📈' : '📉';
                 
                 html += '<tr>';
-                html += `<td><strong>${symbol}</strong></td>`;
+                html += `<td><strong><a href="/sar-slope/coin/${item.symbol}" style="color: #667eea; text-decoration: none;">${symbol} 📊</a></strong></td>`;
                 html += `<td><span class="direction-badge ${directionClass}">${directionEmoji} ${direction}</span></td>`;
                 html += `<td>${directionEmoji}${String(item.sequence).padStart(2, '0')}</td>`;
                 html += `<td>${item.sar_value ? item.sar_value.toFixed(4) : '-'}</td>`;

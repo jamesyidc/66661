@@ -9581,6 +9581,124 @@ def api_sar_slope_history_v2(symbol):
             'traceback': traceback.format_exc()
         }), 500
 
+@app.route('/sar-slope/coin/<symbol>')
+def sar_slope_coin_detail(symbol):
+    """单币种SAR详细数据页面"""
+    return render_template('sar_slope_coin_detail.html', symbol=symbol)
+
+@app.route('/api/sar-slope/coin/<symbol>/detail')
+def api_sar_slope_coin_detail(symbol):
+    """获取单币种的5分钟级别详细SAR数据"""
+    try:
+        hours = int(request.args.get('hours', 24))  # 默认24小时
+        limit = int(request.args.get('limit', 500))
+        
+        start_time = int((datetime.now() - timedelta(hours=hours)).timestamp() * 1000)
+        
+        conn = sqlite3.connect('crypto_data.db')
+        cursor = conn.cursor()
+        
+        # 获取详细的5分钟数据
+        cursor.execute("""
+            SELECT 
+                timestamp,
+                datetime_beijing,
+                sar_value,
+                sar_direction,
+                sequence_number,
+                sar_diff,
+                sar_diff_percent,
+                avg_1day,
+                avg_3day,
+                avg_7day,
+                avg_15day,
+                is_anomaly,
+                anomaly_type,
+                deviation_percent,
+                is_extreme,
+                extreme_type,
+                price_open,
+                price_close
+            FROM sar_slope_v2
+            WHERE symbol = ? AND timestamp >= ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        """, (symbol, start_time, limit))
+        
+        rows = cursor.fetchall()
+        
+        results = []
+        for row in rows:
+            results.append({
+                'timestamp': row[0],
+                'datetime': row[1],
+                'sar_value': round(row[2], 6) if row[2] else None,
+                'direction': row[3],
+                'sequence': row[4],
+                'diff': round(row[5], 6) if row[5] else None,
+                'diff_percent': round(row[6], 6) if row[6] else None,
+                'avg_1day': round(row[7], 6) if row[7] else None,
+                'avg_3day': round(row[8], 6) if row[8] else None,
+                'avg_7day': round(row[9], 6) if row[9] else None,
+                'avg_15day': round(row[10], 6) if row[10] else None,
+                'is_anomaly': bool(row[11]),
+                'anomaly_type': row[12],
+                'deviation_percent': round(row[13], 2) if row[13] else None,
+                'is_extreme': bool(row[14]),
+                'extreme_type': row[15],
+                'price_open': round(row[16], 6) if row[16] else None,
+                'price_close': round(row[17], 6) if row[17] else None
+            })
+        
+        # 获取方向转换历史
+        cursor.execute("""
+            SELECT 
+                change_timestamp,
+                change_datetime_beijing,
+                from_direction,
+                to_direction,
+                sar_value_at_change,
+                price_at_change,
+                previous_duration
+            FROM sar_direction_changes
+            WHERE symbol = ? AND change_timestamp >= ?
+            ORDER BY change_timestamp DESC
+            LIMIT 50
+        """, (symbol, start_time))
+        
+        change_rows = cursor.fetchall()
+        changes = []
+        for row in change_rows:
+            changes.append({
+                'timestamp': row[0],
+                'datetime': row[1],
+                'from_direction': row[2],
+                'to_direction': row[3],
+                'sar_value': round(row[4], 6) if row[4] else None,
+                'price': round(row[5], 6) if row[5] else None,
+                'duration': row[6]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'symbol': symbol,
+            'hours': hours,
+            'data': results,
+            'direction_changes': changes,
+            'count': len(results),
+            'timestamp': datetime.now(BEIJING_TZ).strftime('%Y-%m-%d %H:%M:%S')
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
 
 # ==================== 资金监控系统 API ====================
 
