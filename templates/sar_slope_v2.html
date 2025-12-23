@@ -274,51 +274,129 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             margin-bottom: 25px;
             display: none;
+            border: 2px solid #667eea;
         }
 
         .single-coin-detail.active {
             display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .single-coin-detail h3 {
             color: #2d3748;
-            font-size: 20px;
+            font-size: 22px;
             margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .detail-header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .detail-header-actions a {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .detail-header-actions a:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
         }
 
         .detail-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 20px;
         }
 
         .detail-item {
-            padding: 15px;
-            background: #f7fafc;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
+            padding: 18px;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .detail-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         .detail-item .label {
-            font-size: 12px;
+            font-size: 13px;
             color: #718096;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
 
         .detail-item .value {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
             color: #2d3748;
         }
 
         .detail-item.highlight {
-            background: #edf2f7;
-            border-left-color: #48bb78;
+            background: linear-gradient(135deg, #fef5e7 0%, #fef9e7 100%);
+            border-left-color: #f39c12;
         }
 
         .detail-item.highlight .value {
+            color: #f39c12;
+        }
+
+        .detail-item.direction-long {
+            background: linear-gradient(135deg, #e8f8f5 0%, #d5f4e6 100%);
+            border-left-color: #48bb78;
+        }
+
+        .detail-item.direction-long .value {
             color: #48bb78;
+        }
+
+        .detail-item.direction-short {
+            background: linear-gradient(135deg, #fadbd8 0%, #f5eef8 100%);
+            border-left-color: #f56565;
+        }
+
+        .detail-item.direction-short .value {
+            color: #f56565;
+        }
+
+        .close-detail-btn {
+            background: #e2e8f0;
+            color: #2d3748;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .close-detail-btn:hover {
+            background: #cbd5e0;
         }
     </style>
 </head>
@@ -345,9 +423,16 @@
         </div>
 
         <div class="single-coin-detail" id="coin-detail">
-            <h3 id="coin-title">币种详情</h3>
+            <h3>
+                <span id="coin-title">币种详情</span>
+                <div class="detail-header-actions">
+                    <a href="#" id="view-track-link" target="_blank" style="display:none;">📊 完整跟踪</a>
+                    <a href="#" id="view-chart-link" target="_blank" style="display:none;">📈 查看图表</a>
+                    <button class="close-detail-btn" onclick="clearCoinDetail()">✖️ 关闭</button>
+                </div>
+            </h3>
             <div class="detail-grid">
-                <div class="detail-item">
+                <div class="detail-item" id="detail-direction-item">
                     <div class="label">当前方向</div>
                     <div class="value" id="detail-direction">-</div>
                 </div>
@@ -360,8 +445,8 @@
                     <div class="value" id="detail-sar">-</div>
                 </div>
                 <div class="detail-item">
-                    <div class="label">开盘价</div>
-                    <div class="value" id="detail-open">-</div>
+                    <div class="label">币价</div>
+                    <div class="value" id="detail-price">-</div>
                 </div>
                 <div class="detail-item highlight">
                     <div class="label">当天平均差值%</div>
@@ -557,32 +642,58 @@
             const symbol = selectedSymbol.replace('-USDT-SWAP', '');
             const direction = coinData.direction === 'long' ? '📈 多头' : '📉 空头';
             const directionEmoji = coinData.direction === 'long' ? '📈' : '📉';
+            const directionClass = coinData.direction === 'long' ? 'direction-long' : 'direction-short';
             
+            // 更新标题
             document.getElementById('coin-title').textContent = `${symbol} - 详细数据`;
+            
+            // 更新链接
+            document.getElementById('view-track-link').href = `/sar-slope/track/${selectedSymbol}`;
+            document.getElementById('view-track-link').style.display = 'inline-block';
+            document.getElementById('view-chart-link').href = `/sar-slope/coin/${selectedSymbol}`;
+            document.getElementById('view-chart-link').style.display = 'inline-block';
+            
+            // 更新方向（添加颜色类）
+            const directionItem = document.getElementById('detail-direction-item');
+            directionItem.className = `detail-item ${directionClass}`;
             document.getElementById('detail-direction').textContent = direction;
+            
+            // 更新序号
             document.getElementById('detail-sequence').textContent = `${directionEmoji}${String(coinData.sequence).padStart(2, '0')}`;
+            
+            // 更新SAR值
             document.getElementById('detail-sar').textContent = coinData.sar_value ? coinData.sar_value.toFixed(6) : '-';
-            document.getElementById('detail-open').textContent = coinData.price_open ? coinData.price_open.toFixed(6) : '-';
+            
+            // 更新币价（使用收盘价）
+            document.getElementById('detail-price').textContent = coinData.price_close ? coinData.price_close.toFixed(6) : '-';
             
             // 当天平均值（高亮显示）
             document.getElementById('detail-avg-1day').textContent = 
                 coinData.avg_1day ? coinData.avg_1day.toFixed(6) + '%' : '-';
             
+            // 3天平均值
             document.getElementById('detail-avg-3day').textContent = 
                 coinData.avg_3day ? coinData.avg_3day.toFixed(6) + '%' : '-';
             
+            // 7天平均值
             document.getElementById('detail-avg-7day').textContent = 
                 coinData.avg_7day ? coinData.avg_7day.toFixed(6) + '%' : '-';
             
+            // 15天平均值
             document.getElementById('detail-avg-15day').textContent = 
                 coinData.avg_15day ? coinData.avg_15day.toFixed(6) + '%' : '-';
             
-            document.getElementById('coin-detail').classList.add('active');
+            // 显示详情区域并滚动到视图
+            const detailElement = document.getElementById('coin-detail');
+            detailElement.classList.add('active');
+            detailElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function clearCoinDetail() {
             document.getElementById('coin-select').value = '';
             document.getElementById('coin-detail').classList.remove('active');
+            document.getElementById('view-track-link').style.display = 'none';
+            document.getElementById('view-chart-link').style.display = 'none';
         }
 
         // 页面加载时自动获取数据
