@@ -208,6 +208,118 @@
             font-size: 13px;
             margin-top: 20px;
         }
+
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        .filter-section h3 {
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-controls select {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-controls select:hover {
+            border-color: #667eea;
+        }
+
+        .filter-controls select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .filter-controls button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-controls button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .single-coin-detail {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            display: none;
+        }
+
+        .single-coin-detail.active {
+            display: block;
+        }
+
+        .single-coin-detail h3 {
+            color: #2d3748;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .detail-item .label {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 5px;
+        }
+
+        .detail-item .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .detail-item.highlight {
+            background: #edf2f7;
+            border-left-color: #48bb78;
+        }
+
+        .detail-item.highlight .value {
+            color: #48bb78;
+        }
     </style>
 </head>
 <body>
@@ -218,6 +330,55 @@
             <div class="nav-buttons">
                 <a href="/">🏠 返回首页</a>
                 <a href="#" onclick="loadData(); return false;">🔄 刷新数据</a>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <h3>🔍 单币种跟踪</h3>
+            <div class="filter-controls">
+                <select id="coin-select">
+                    <option value="">选择币种...</option>
+                </select>
+                <button onclick="showCoinDetail()">📊 查看详情</button>
+                <button onclick="clearCoinDetail()">✖️ 清除</button>
+            </div>
+        </div>
+
+        <div class="single-coin-detail" id="coin-detail">
+            <h3 id="coin-title">币种详情</h3>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="label">当前方向</div>
+                    <div class="value" id="detail-direction">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">序号</div>
+                    <div class="value" id="detail-sequence">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">SAR值</div>
+                    <div class="value" id="detail-sar">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">开盘价</div>
+                    <div class="value" id="detail-open">-</div>
+                </div>
+                <div class="detail-item highlight">
+                    <div class="label">当天平均差值%</div>
+                    <div class="value" id="detail-avg-1day">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">3天平均差值%</div>
+                    <div class="value" id="detail-avg-3day">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">7天平均差值%</div>
+                    <div class="value" id="detail-avg-7day">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">15天平均差值%</div>
+                    <div class="value" id="detail-avg-15day">-</div>
+                </div>
             </div>
         </div>
 
@@ -285,10 +446,23 @@
             html += '<th>序号</th>';
             html += '<th>SAR值</th>';
             html += '<th>差值%</th>';
+            html += '<th>当天均值</th>';
             html += '<th>3天均值</th>';
             html += '<th>状态</th>';
             html += '<th>更新时间</th>';
             html += '</tr></thead><tbody>';
+
+            // 填充币种选择器
+            const coinSelect = document.getElementById('coin-select');
+            if (coinSelect.options.length === 1) {  // 只有默认选项
+                data.forEach(item => {
+                    const symbol = item.symbol.replace('-USDT-SWAP', '');
+                    const option = document.createElement('option');
+                    option.value = item.symbol;
+                    option.textContent = symbol;
+                    coinSelect.appendChild(option);
+                });
+            }
 
             data.forEach(item => {
                 const symbol = item.symbol.replace('-USDT-SWAP', '');
@@ -309,6 +483,9 @@
                 } else {
                     html += '<td>-</td>';
                 }
+                
+                // 当天平均值
+                html += `<td><strong>${item.avg_1day ? item.avg_1day.toFixed(5) + '%' : '-'}</strong></td>`;
                 
                 // 3天平均值
                 html += `<td>${item.avg_3day ? item.avg_3day.toFixed(5) + '%' : '-'}</td>`;
@@ -338,6 +515,74 @@
         function showError(message) {
             document.getElementById('table-container').innerHTML = 
                 `<div class="error">错误: ${message}</div>`;
+        }
+
+        let allData = [];
+
+        function loadData() {
+            fetch('/api/sar-slope/latest')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        allData = data.data;  // 保存数据供单币种查看使用
+                        updateStats(data.stats);
+                        updateTable(data.data);
+                        document.getElementById('last-update').textContent = 
+                            `最后更新: ${data.timestamp}`;
+                    } else {
+                        showError(data.error);
+                    }
+                })
+                .catch(error => {
+                    showError(error.message);
+                });
+        }
+
+        function showCoinDetail() {
+            const coinSelect = document.getElementById('coin-select');
+            const selectedSymbol = coinSelect.value;
+            
+            if (!selectedSymbol) {
+                alert('请先选择一个币种');
+                return;
+            }
+
+            const coinData = allData.find(item => item.symbol === selectedSymbol);
+            
+            if (!coinData) {
+                alert('未找到该币种数据');
+                return;
+            }
+
+            const symbol = selectedSymbol.replace('-USDT-SWAP', '');
+            const direction = coinData.direction === 'long' ? '📈 多头' : '📉 空头';
+            const directionEmoji = coinData.direction === 'long' ? '📈' : '📉';
+            
+            document.getElementById('coin-title').textContent = `${symbol} - 详细数据`;
+            document.getElementById('detail-direction').textContent = direction;
+            document.getElementById('detail-sequence').textContent = `${directionEmoji}${String(coinData.sequence).padStart(2, '0')}`;
+            document.getElementById('detail-sar').textContent = coinData.sar_value ? coinData.sar_value.toFixed(6) : '-';
+            document.getElementById('detail-open').textContent = coinData.price_open ? coinData.price_open.toFixed(6) : '-';
+            
+            // 当天平均值（高亮显示）
+            document.getElementById('detail-avg-1day').textContent = 
+                coinData.avg_1day ? coinData.avg_1day.toFixed(6) + '%' : '-';
+            
+            document.getElementById('detail-avg-3day').textContent = 
+                coinData.avg_3day ? coinData.avg_3day.toFixed(6) + '%' : '-';
+            
+            document.getElementById('detail-avg-7day').textContent = 
+                coinData.avg_7day ? coinData.avg_7day.toFixed(6) + '%' : '-';
+            
+            document.getElementById('detail-avg-15day').textContent = 
+                coinData.avg_15day ? coinData.avg_15day.toFixed(6) + '%' : '-';
+            
+            document.getElementById('coin-detail').classList.add('active');
+        }
+
+        function clearCoinDetail() {
+            document.getElementById('coin-select').value = '';
+            document.getElementById('coin-detail').classList.remove('active');
         }
 
         // 页面加载时自动获取数据
