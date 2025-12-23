@@ -293,7 +293,32 @@
             </div>
         </div>
         
-        <div class="table-container">
+        <!-- 创新高/创新低日志区域 -->
+        <div class="table-container" style="margin-top: 30px;">
+            <div class="table-header">
+                <div class="table-title">📝 创新高/创新低日志</div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="logDaysFilter" onchange="loadBreakthroughLogs()" style="padding: 8px 12px; background: rgba(139, 146, 184, 0.1); border: 1px solid rgba(139, 146, 184, 0.3); border-radius: 6px; color: #fff; font-size: 14px;">
+                        <option value="1">最近1天</option>
+                        <option value="3">最近3天</option>
+                        <option value="7" selected>最近7天</option>
+                        <option value="30">最近30天</option>
+                    </select>
+                    <select id="logTypeFilter" onchange="loadBreakthroughLogs()" style="padding: 8px 12px; background: rgba(139, 146, 184, 0.1); border: 1px solid rgba(139, 146, 184, 0.3); border-radius: 6px; color: #fff; font-size: 14px;">
+                        <option value="">全部类型</option>
+                        <option value="new_high">仅创新高</option>
+                        <option value="new_low">仅创新低</option>
+                    </select>
+                    <button class="refresh-btn" onclick="loadBreakthroughLogs()">🔄 刷新</button>
+                </div>
+            </div>
+            
+            <div id="logsContent" style="max-height: 500px; overflow-y: auto;">
+                <div class="loading">加载日志中...</div>
+            </div>
+        </div>
+        
+        <div class="table-container" style="margin-top: 30px;">
             <div class="table-header">
                 <div class="table-title">📈 币种比价监控</div>
                 <button class="refresh-btn" onclick="loadData()">🔄 刷新数据</button>
@@ -328,6 +353,9 @@
             
             // 加载突破事件统计
             loadBreakthroughStats();
+            
+            // 加载突破事件日志
+            loadBreakthroughLogs();
         }
         
         async function loadBreakthroughStats() {
@@ -352,6 +380,67 @@
                 }
             } catch (error) {
                 console.error('加载突破统计失败:', error);
+            }
+        }
+        
+        async function loadBreakthroughLogs() {
+            try {
+                const days = document.getElementById('logDaysFilter').value;
+                const type = document.getElementById('logTypeFilter').value;
+                
+                let url = `/api/price-comparison/breakthrough-logs?days=${days}&limit=100`;
+                if (type) url += `&type=${type}`;
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success && result.data.length > 0) {
+                    const logsHtml = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 180px;">时间</th>
+                                    <th style="width: 100px;">币名</th>
+                                    <th style="width: 100px;">事件</th>
+                                    <th style="width: 150px;">价格</th>
+                                    <th style="width: 150px;">之前价格</th>
+                                    <th style="width: 120px;">变化</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${result.data.map(log => {
+                                    const isHigh = log.event_type === 'new_high';
+                                    const eventColor = isHigh ? '#10b981' : '#ef4444';
+                                    const eventIcon = isHigh ? '🚀' : '📉';
+                                    const changeColor = log.change > 0 ? '#10b981' : '#ef4444';
+                                    
+                                    return `
+                                        <tr>
+                                            <td>${log.event_time}</td>
+                                            <td style="font-weight: bold;">${log.coin_name}</td>
+                                            <td style="color: ${eventColor}; font-weight: bold;">
+                                                ${eventIcon} ${log.event_label}
+                                            </td>
+                                            <td>$${log.price.toFixed(6)}</td>
+                                            <td style="color: rgba(255,255,255,0.6);">$${log.previous_extreme_price ? log.previous_extreme_price.toFixed(6) : '-'}</td>
+                                            <td style="color: ${changeColor}; font-weight: bold;">
+                                                ${log.change > 0 ? '+' : ''}${log.change.toFixed(6)}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    document.getElementById('logsContent').innerHTML = logsHtml;
+                } else {
+                    document.getElementById('logsContent').innerHTML = 
+                        '<div class="loading" style="color: rgba(255,255,255,0.5);">暂无日志记录</div>';
+                }
+            } catch (error) {
+                console.error('加载突破日志失败:', error);
+                document.getElementById('logsContent').innerHTML = 
+                    '<div class="loading" style="color: #ef4444;">加载失败: ' + error.message + '</div>';
             }
         }
         

@@ -292,6 +292,18 @@ class ScoreCalculator:
         cursor.execute(query_panic)
         panic_data = cursor.fetchone()
         
+        # 获取BTC的4个周期平均位置
+        query_positions = """
+        SELECT position_4h, position_12h, position_24h, position_48h
+        FROM position_system
+        WHERE symbol = 'BTC-USDT-SWAP'
+        ORDER BY record_time DESC
+        LIMIT 1
+        """
+        
+        cursor.execute(query_positions)
+        position_data = cursor.fetchone()
+        
         conn.close()
         
         # 计算OKEX指数 (0-100分)
@@ -341,11 +353,22 @@ class ScoreCalculator:
         else:
             strength = '极弱'
         
+        # 准备周期位置数据（格式化为前端期望的格式）
+        averages = {}
+        if position_data:
+            averages = {
+                '4h': round(position_data['position_4h'], 2) if position_data['position_4h'] else '--',
+                '12h': round(position_data['position_12h'], 2) if position_data['position_12h'] else '--',
+                '24h': round(position_data['position_24h'], 2) if position_data['position_24h'] else '--',
+                '48h': round(position_data['position_48h'], 2) if position_data['position_48h'] else '--'
+            }
+        
         return {
             'index_value': round(index_value, 2),
             'trend': trend,
             'trend_cn': trend_cn,
             'strength': strength,
+            'averages': averages,  # 添加4个周期的平均位置
             'details': {
                 'momentum_score': round(momentum_score, 2),
                 'ratio_score': round(ratio_score, 2),

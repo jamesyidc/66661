@@ -235,6 +235,46 @@
             <p>14项核心指标 · 实心星/空心星评分 · 实时更新</p>
         </div>
         
+        <!-- 历史数据查看器 -->
+        <div class="history-controls" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-bottom: 30px;">
+            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 8px; color: rgba(255,255,255,0.8);">📅 选择日期:</label>
+                    <input type="date" id="history-date" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white; font-size: 14px;" />
+                </div>
+                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <button onclick="loadHistoryData()" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold;">
+                        🔍 查看历史
+                    </button>
+                    <button onclick="loadLatestData()" style="padding: 10px 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold;">
+                        🔄 最新数据
+                    </button>
+                </div>
+                <div id="current-view-info" style="color: #4ade80; font-weight: bold; font-size: 14px;">
+                    当前查看: 实时数据
+                </div>
+            </div>
+            
+            <!-- 时间轴 -->
+            <div id="timeline-container" style="margin-top: 20px; display: none;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <span style="color: rgba(255,255,255,0.8);">⏱️ 时间轴:</span>
+                    <span id="timeline-info" style="color: #fbbf24;"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button onclick="timelineNavigate('prev')" id="btn-prev" style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; color: white; cursor: pointer;">
+                        ⬅️ 上一条
+                    </button>
+                    <div id="timeline-slider" style="flex: 1; position: relative; height: 40px; background: rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden;">
+                        <!-- 时间轴刻度将在这里动态生成 -->
+                    </div>
+                    <button onclick="timelineNavigate('next')" id="btn-next" style="padding: 8px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; color: white; cursor: pointer;">
+                        下一条 ➡️
+                    </button>
+                </div>
+            </div>
+        </div>
+        
         <div id="loading" class="loading">
             加载中...
         </div>
@@ -266,6 +306,164 @@
                     <div class="summary-box">
                         <div class="summary-value" style="color: #ef4444;" id="hollow-percentage">-</div>
                         <div class="summary-label">空心星占比</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 新增：补充数据区域 -->
+            <div class="summary-section">
+                <h2 class="section-title">📦 补充数据</h2>
+                <div class="summary-grid">
+                    <!-- V1 数量 -->
+                    <div class="summary-box" style="border-color: rgba(34, 197, 94, 0.5);">
+                        <div class="summary-value" style="color: #22c55e;" id="v1-count">-</div>
+                        <div class="summary-label">V1 币种数量</div>
+                        <div style="margin-top: 10px; font-size: 12px; color: rgba(255,255,255,0.6);" id="v1-coins">-</div>
+                    </div>
+                    
+                    <!-- V2 数量 -->
+                    <div class="summary-box" style="border-color: rgba(239, 68, 68, 0.5);">
+                        <div class="summary-value" style="color: #ef4444;" id="v2-count">-</div>
+                        <div class="summary-label">V2 币种数量</div>
+                        <div style="margin-top: 10px; font-size: 12px; color: rgba(255,255,255,0.6);" id="v2-coins">-</div>
+                    </div>
+                    
+                    <!-- 1分钟涨跌速 - 上涨预警 -->
+                    <div class="summary-box" style="border-color: rgba(16, 185, 129, 0.5);">
+                        <div class="summary-label" style="margin-bottom: 10px;">⬆️ 上涨预警</div>
+                        <div style="font-size: 14px; line-height: 1.8;">
+                            <div>超强: <span style="color: #10b981;" id="alert-super-up">-</span></div>
+                            <div>很强: <span style="color: #10b981;" id="alert-very-up">-</span></div>
+                            <div>较强: <span style="color: #10b981;" id="alert-strong-up">-</span></div>
+                            <div>一般: <span style="color: #10b981;" id="alert-general-up">-</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 1分钟涨跌速 - 下跌预警 -->
+                    <div class="summary-box" style="border-color: rgba(239, 68, 68, 0.5);">
+                        <div class="summary-label" style="margin-bottom: 10px;">⬇️ 下跌预警</div>
+                        <div style="font-size: 14px; line-height: 1.8;">
+                            <div>超强: <span style="color: #ef4444;" id="alert-super-down">-</span></div>
+                            <div>很强: <span style="color: #ef4444;" id="alert-very-down">-</span></div>
+                            <div>较强: <span style="color: #ef4444;" id="alert-strong-down">-</span></div>
+                            <div>一般: <span style="color: #ef4444;" id="alert-general-down">-</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 位置系统平均位置 -->
+                    <div class="summary-box" style="border-color: rgba(59, 130, 246, 0.5);">
+                        <div class="summary-label" style="margin-bottom: 10px;">📍 平均位置</div>
+                        <div style="font-size: 14px; line-height: 1.8;">
+                            <div>4小时: <span style="color: #3b82f6;" id="pos-4h">-</span></div>
+                            <div>12小时: <span style="color: #3b82f6;" id="pos-12h">-</span></div>
+                            <div>24小时: <span style="color: #3b82f6;" id="pos-24h">-</span></div>
+                            <div>48小时: <span style="color: #3b82f6;" id="pos-48h">-</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 新增：符合条件的虚拟币池 -->
+            <div class="summary-section">
+                <h2 class="section-title">📋 符合条件的虚拟币池</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+                    <!-- V1币种 -->
+                    <div class="summary-box" style="border-color: rgba(255, 215, 0, 0.6); background: linear-gradient(135deg, rgba(80, 70, 20, 0.5) 0%, rgba(60, 50, 10, 0.5) 100%); text-align: left;">
+                        <div class="summary-label" style="margin-bottom: 15px; color: #FFD700; font-weight: bold; font-size: 1.2rem;">
+                            🟡 V1币种 <span id="pool-v1-count" style="color: #FFD700;">0</span>个
+                        </div>
+                        <div id="pool-v1-coins" style="font-size: 0.95rem; color: rgba(255,255,255,0.85); line-height: 1.8; word-wrap: break-word;">
+                            -
+                        </div>
+                    </div>
+                    
+                    <!-- V2币种 -->
+                    <div class="summary-box" style="border-color: rgba(59, 130, 246, 0.6); background: linear-gradient(135deg, rgba(20, 40, 80, 0.5) 0%, rgba(10, 30, 60, 0.5) 100%); text-align: left;">
+                        <div class="summary-label" style="margin-bottom: 15px; color: #3b82f6; font-weight: bold; font-size: 1.2rem;">
+                            🔵 V2币种 <span id="pool-v2-count" style="color: #3b82f6;">0</span>个
+                        </div>
+                        <div id="pool-v2-coins" style="font-size: 0.95rem; color: rgba(255,255,255,0.85); line-height: 1.8; word-wrap: break-word;">
+                            -
+                        </div>
+                    </div>
+                    
+                    <!-- 只有急涨 -->
+                    <div class="summary-box" style="border-color: rgba(34, 197, 94, 0.6); background: linear-gradient(135deg, rgba(10, 60, 30, 0.5) 0%, rgba(5, 50, 20, 0.5) 100%); text-align: left;">
+                        <div class="summary-label" style="margin-bottom: 15px; color: #22c55e; font-weight: bold; font-size: 1.2rem;">
+                            🟢 只有急涨 <span id="pool-only-rush-up-count" style="color: #22c55e;">0</span>个
+                        </div>
+                        <div id="pool-only-rush-up-coins" style="font-size: 0.95rem; color: rgba(255,255,255,0.85); line-height: 1.8; word-wrap: break-word;">
+                            -
+                        </div>
+                    </div>
+                    
+                    <!-- 急涨>急跌 -->
+                    <div class="summary-box" style="border-color: rgba(16, 185, 129, 0.6); background: linear-gradient(135deg, rgba(10, 70, 40, 0.5) 0%, rgba(5, 60, 30, 0.5) 100%); text-align: left;">
+                        <div class="summary-label" style="margin-bottom: 15px; color: #10b981; font-weight: bold; font-size: 1.2rem;">
+                            🟢 急涨>急跌 <span id="pool-rush-up-gt-down-count" style="color: #10b981;">0</span>个
+                        </div>
+                        <div id="pool-rush-up-gt-down-coins" style="font-size: 0.95rem; color: rgba(255,255,255,0.85); line-height: 1.8; word-wrap: break-word;">
+                            -
+                        </div>
+                    </div>
+                    
+                    <!-- 优先级≥4 -->
+                    <div class="summary-box" style="border-color: rgba(249, 115, 22, 0.6); background: linear-gradient(135deg, rgba(80, 40, 10, 0.5) 0%, rgba(70, 30, 5, 0.5) 100%); text-align: left;">
+                        <div class="summary-label" style="margin-bottom: 15px; color: #f97316; font-weight: bold; font-size: 1.2rem;">
+                            🟠 优先级≥4 <span id="pool-priority-high-count" style="color: #f97316;">0</span>个
+                        </div>
+                        <div id="pool-priority-high-coins" style="font-size: 0.95rem; color: rgba(255,255,255,0.85); line-height: 1.8; word-wrap: break-word;">
+                            -
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 继续：补充数据区域其他内容 -->
+            <div class="summary-section">
+                <h2 class="section-title">📦 补充数据（续）</h2>
+                <div class="summary-grid">
+                    
+                    <!-- BTC 市场情绪 -->
+                    <div class="summary-box" style="border-color: rgba(255, 193, 7, 0.6); background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%);">
+                        <div class="summary-label" style="margin-bottom: 10px; color: #ffc107; font-weight: bold;">🟡 BTC 位置</div>
+                        <div style="font-size: 14px; line-height: 1.8;">
+                            <div>4小时: <span style="color: #ffc107; font-weight: bold;" id="btc-4h">-</span></div>
+                            <div>12小时: <span style="color: #ffc107; font-weight: bold;" id="btc-12h">-</span></div>
+                            <div>24小时: <span style="color: #ffc107; font-weight: bold;" id="btc-24h">-</span></div>
+                            <div>48小时: <span style="color: #ffc107; font-weight: bold;" id="btc-48h">-</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- ETH 市场情绪 -->
+                    <div class="summary-box" style="border-color: rgba(99, 125, 255, 0.6); background: linear-gradient(135deg, rgba(99, 125, 255, 0.15) 0%, rgba(79, 70, 229, 0.15) 100%);">
+                        <div class="summary-label" style="margin-bottom: 10px; color: #637dff; font-weight: bold;">🔵 ETH 位置</div>
+                        <div style="font-size: 14px; line-height: 1.8;">
+                            <div>4小时: <span style="color: #637dff; font-weight: bold;" id="eth-4h">-</span></div>
+                            <div>12小时: <span style="color: #637dff; font-weight: bold;" id="eth-12h">-</span></div>
+                            <div>24小时: <span style="color: #637dff; font-weight: bold;" id="eth-24h">-</span></div>
+                            <div>48小时: <span style="color: #637dff; font-weight: bold;" id="eth-48h">-</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 18. 创新高统计 -->
+                    <div class="summary-box" style="border-color: rgba(239, 68, 68, 0.5); background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);">
+                        <div class="summary-label" style="margin-bottom: 10px; color: #ef4444;">🚀 创新高统计</div>
+                        <div style="font-size: 14px; line-height: 1.8;">
+                            <div>当天: <span style="color: #ef4444; font-weight: bold;" id="breakthrough-today-high">-</span></div>
+                            <div>3天: <span style="color: #ef4444; font-weight: bold;" id="breakthrough-3days-high">-</span></div>
+                            <div>7天: <span style="color: #ef4444; font-weight: bold;" id="breakthrough-7days-high">-</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 19. 创新低统计 -->
+                    <div class="summary-box" style="border-color: rgba(16, 185, 129, 0.5); background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);">
+                        <div class="summary-label" style="margin-bottom: 10px; color: #10b981;">📉 创新低统计</div>
+                        <div style="font-size: 14px; line-height: 1.8;">
+                            <div>当天: <span style="color: #10b981; font-weight: bold;" id="breakthrough-today-low">-</span></div>
+                            <div>3天: <span style="color: #10b981; font-weight: bold;" id="breakthrough-3days-low">-</span></div>
+                            <div>7天: <span style="color: #10b981; font-weight: bold;" id="breakthrough-7days-low">-</span></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -358,25 +556,32 @@
                         <div class="count-display" id="only-rush-down">-</div>
                     </div>
                     
-                    <!-- 12. 今天创新低记录 -->
+                    <!-- 12. 急跌大于急涨 -->
                     <div class="indicator-box">
-                        <div class="indicator-title">12. 今天创新低记录</div>
+                        <div class="indicator-title">12. 急跌大于急涨</div>
+                        <div class="indicator-value">统计: 币种数量</div>
+                        <div class="count-display" id="rush-down-gt-up">-</div>
+                    </div>
+                    
+                    <!-- 13. 今天创新低记录 -->
+                    <div class="indicator-box">
+                        <div class="indicator-title">13. 今天创新低记录</div>
                         <div class="indicator-value">当前值: <span id="new-low-value">-</span> 次</div>
                         <div class="indicator-value">阈值: 1-3(1☆) / 3-10(2☆) / >10(3☆)</div>
                         <div class="indicator-stars hollow" id="new-low-stars">---</div>
                     </div>
                     
-                    <!-- 13. 今天创新高记录 -->
+                    <!-- 14. 今天创新高记录 -->
                     <div class="indicator-box">
-                        <div class="indicator-title">13. 今天创新高记录</div>
+                        <div class="indicator-title">14. 今天创新高记录</div>
                         <div class="indicator-value">当前值: <span id="new-high-value">-</span> 次</div>
                         <div class="indicator-value">阈值: 1-3(1★) / 3-10(2★) / >10(3★)</div>
                         <div class="indicator-stars solid" id="new-high-stars">---</div>
                     </div>
                     
-                    <!-- 14. 计次得分 -->
+                    <!-- 15. 计次得分 -->
                     <div class="indicator-box">
-                        <div class="indicator-title">14. 计次得分</div>
+                        <div class="indicator-title">15. 计次得分</div>
                         <div class="indicator-value">当前值: <span id="count-value">-</span></div>
                         <div class="indicator-value">动态阈值 (根据时间段)</div>
                         <div class="indicator-stars" id="count-stars">---</div>
@@ -438,8 +643,9 @@
                         document.getElementById('diff-neg-value').textContent = diffValue < 0 ? diffValue : '不适用';
                         document.getElementById('diff-neg-stars').textContent = data.diff_negative.display;
                         
-                        // 5. 全网持仓量
-                        document.getElementById('holdings-value').textContent = rawData.holdings.toFixed(2);
+                        // 5. 全网持仓量（单位转换：元 → 亿）
+                        const holdingsInYi = (rawData.holdings / 100000000).toFixed(2);
+                        document.getElementById('holdings-value').textContent = holdingsInYi;
                         document.getElementById('holdings-stars').textContent = data.holdings.display;
                         
                         // 6. 做多信号
@@ -485,19 +691,127 @@
                                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">${onlyRushDownCoins.join(', ')}</div>`
                             : '<div style="font-size: 1.5rem; color: rgba(255,255,255,0.5);">无</div>';
                         
-                        // 12. 今天创新低
+                        // 12. 急跌大于急涨
+                        const rushDownGtUpCoins = coinLists.rush_down_gt_up_coins || [];
+                        document.getElementById('rush-down-gt-up').innerHTML = 
+                            rushDownGtUpCoins.length > 0 
+                            ? `<div style="font-size: 2rem; font-weight: bold; color: #00d4ff; margin-bottom: 10px;">${rushDownGtUpCoins.length}个币种</div>
+                               <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">${rushDownGtUpCoins.join(', ')}</div>`
+                            : '<div style="font-size: 1.5rem; color: rgba(255,255,255,0.5);">无</div>';
+                        
+                        // 13. 今天创新低
                         document.getElementById('new-low-value').textContent = rawData.new_low_today;
                         document.getElementById('new-low-stars').textContent = data.new_low_today.display;
                         
-                        // 13. 今天创新高
+                        // 14. 今天创新高
                         document.getElementById('new-high-value').textContent = rawData.new_high_today;
                         document.getElementById('new-high-stars').textContent = data.new_high_today.display;
                         
-                        // 14. 计次得分
+                        // 15. 计次得分
                         document.getElementById('count-value').textContent = rawData.count;
                         const countStarsEl = document.getElementById('count-stars');
                         countStarsEl.textContent = data.count_score.display;
                         countStarsEl.className = 'indicator-stars ' + (data.count_score.type === '实心' ? 'solid' : data.count_score.type === '空心' ? 'hollow' : 'none');
+                        
+                        // ========== 新增数据更新 ==========
+                        // V1/V2 币种
+                        const v1v2Data = response.v1v2_data || {};
+                        document.getElementById('v1-count').textContent = v1v2Data.v1_count || 0;
+                        document.getElementById('v2-count').textContent = v1v2Data.v2_count || 0;
+                        document.getElementById('v1-coins').textContent = (v1v2Data.v1_coins || []).join(', ') || '无';
+                        document.getElementById('v2-coins').textContent = (v1v2Data.v2_coins || []).join(', ') || '无';
+                        
+                        // ========== 符合条件的虚拟币池 ==========
+                        // 从 coin_lists 获取数据（已在上方声明）
+                        
+                        // V1币种
+                        const v1Coins = v1v2Data.v1_coins || [];
+                        document.getElementById('pool-v1-count').textContent = v1Coins.length;
+                        document.getElementById('pool-v1-coins').textContent = v1Coins.join(', ') || '-';
+                        
+                        // V2币种
+                        const v2Coins = v1v2Data.v2_coins || [];
+                        document.getElementById('pool-v2-count').textContent = v2Coins.length;
+                        document.getElementById('pool-v2-coins').textContent = v2Coins.join(', ') || '-';
+                        
+                        // 只有急涨
+                        const onlyRushUp = coinLists.only_rush_up_coins || [];
+                        document.getElementById('pool-only-rush-up-count').textContent = onlyRushUp.length;
+                        if (onlyRushUp.length > 3) {
+                            document.getElementById('pool-only-rush-up-coins').textContent = 
+                                onlyRushUp.slice(0, 3).join(', ') + '... (共' + onlyRushUp.length + '个)';
+                        } else {
+                            document.getElementById('pool-only-rush-up-coins').textContent = onlyRushUp.join(', ') || '-';
+                        }
+                        
+                        // 急涨>急跌
+                        const rushUpGtDown = coinLists.rush_up_gt_down_coins || [];
+                        document.getElementById('pool-rush-up-gt-down-count').textContent = rushUpGtDown.length;
+                        if (rushUpGtDown.length > 3) {
+                            document.getElementById('pool-rush-up-gt-down-coins').textContent = 
+                                rushUpGtDown.slice(0, 3).join(', ') + '... (共' + rushUpGtDown.length + '个)';
+                        } else {
+                            document.getElementById('pool-rush-up-gt-down-coins').textContent = rushUpGtDown.join(', ') || '-';
+                        }
+                        
+                        // 优先级≥4
+                        const priorityHigh = coinLists.priority_high_coins || [];
+                        document.getElementById('pool-priority-high-count').textContent = priorityHigh.length;
+                        document.getElementById('pool-priority-high-coins').textContent = priorityHigh.join(', ') || '-';
+                        
+                        // 1分钟涨跌速预警
+                        const alerts = response.price_speed_alerts || {};
+                        const alertsUp = alerts.up || {};
+                        const alertsDown = alerts.down || {};
+                        
+                        document.getElementById('alert-super-up').textContent = 
+                            (alertsUp.super_strong?.count || 0) + '个' + 
+                            ((alertsUp.super_strong?.coins || []).length > 0 ? ` (${(alertsUp.super_strong?.coins || []).join(', ')})` : '');
+                        document.getElementById('alert-very-up').textContent = 
+                            (alertsUp.very_strong?.count || 0) + '个' +
+                            ((alertsUp.very_strong?.coins || []).length > 0 ? ` (${(alertsUp.very_strong?.coins || []).join(', ')})` : '');
+                        document.getElementById('alert-strong-up').textContent = 
+                            (alertsUp.strong?.count || 0) + '个' +
+                            ((alertsUp.strong?.coins || []).length > 0 ? ` (${(alertsUp.strong?.coins || []).join(', ')})` : '');
+                        document.getElementById('alert-general-up').textContent = 
+                            (alertsUp.general?.count || 0) + '个' +
+                            ((alertsUp.general?.coins || []).length > 0 ? ` (${(alertsUp.general?.coins || []).join(', ')})` : '');
+                        
+                        document.getElementById('alert-super-down').textContent = 
+                            (alertsDown.super_strong?.count || 0) + '个' +
+                            ((alertsDown.super_strong?.coins || []).length > 0 ? ` (${(alertsDown.super_strong?.coins || []).join(', ')})` : '');
+                        document.getElementById('alert-very-down').textContent = 
+                            (alertsDown.very_strong?.count || 0) + '个' +
+                            ((alertsDown.very_strong?.coins || []).length > 0 ? ` (${(alertsDown.very_strong?.coins || []).join(', ')})` : '');
+                        document.getElementById('alert-strong-down').textContent = 
+                            (alertsDown.strong?.count || 0) + '个' +
+                            ((alertsDown.strong?.coins || []).length > 0 ? ` (${(alertsDown.strong?.coins || []).join(', ')})` : '');
+                        document.getElementById('alert-general-down').textContent = 
+                            (alertsDown.general?.count || 0) + '个' +
+                            ((alertsDown.general?.coins || []).length > 0 ? ` (${(alertsDown.general?.coins || []).join(', ')})` : '');
+                        
+                        // 位置系统平均位置
+                        const posAvg = response.position_avg || {};
+                        document.getElementById('pos-4h').textContent = (posAvg['4h'] || 0).toFixed(2);
+                        document.getElementById('pos-12h').textContent = (posAvg['12h'] || 0).toFixed(2);
+                        document.getElementById('pos-24h').textContent = (posAvg['24h'] || 0).toFixed(2);
+                        document.getElementById('pos-48h').textContent = (posAvg['48h'] || 0).toFixed(2);
+                        
+                        // 创新高/创新低统计
+                        const breakthrough = response.breakthrough_stats || {};
+                        const breakthroughToday = breakthrough.today || {};
+                        const breakthrough3Days = breakthrough.three_days || {};
+                        const breakthrough7Days = breakthrough.seven_days || {};
+                        
+                        document.getElementById('breakthrough-today-high').textContent = breakthroughToday.new_high || 0;
+                        document.getElementById('breakthrough-today-low').textContent = breakthroughToday.new_low || 0;
+                        document.getElementById('breakthrough-3days-high').textContent = breakthrough3Days.new_high || 0;
+                        document.getElementById('breakthrough-3days-low').textContent = breakthrough3Days.new_low || 0;
+                        document.getElementById('breakthrough-7days-high').textContent = breakthrough7Days.new_high || 0;
+                        document.getElementById('breakthrough-7days-low').textContent = breakthrough7Days.new_low || 0;
+                        
+                        // BTC & ETH 市场情绪参考
+                        updateBtcEthPositions();
                         
                         // 更新时间
                         document.getElementById('update-time').textContent = '最后更新: ' + response.update_time;
@@ -515,11 +829,219 @@
                 });
         }
         
+        // 更新BTC和ETH位置数据
+        function updateBtcEthPositions() {
+            fetch('/api/position/latest')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.data) {
+                        // 查找BTC和ETH数据 (使用includes匹配)
+                        const btcData = data.data.find(coin => coin.symbol.includes('BTC'));
+                        const ethData = data.data.find(coin => coin.symbol.includes('ETH'));
+                        
+                        // 更新BTC位置
+                        if (btcData) {
+                            document.getElementById('btc-4h').textContent = btcData.position_4h !== null ? btcData.position_4h.toFixed(1) + '%' : '--';
+                            document.getElementById('btc-12h').textContent = btcData.position_12h !== null ? btcData.position_12h.toFixed(1) + '%' : '--';
+                            document.getElementById('btc-24h').textContent = btcData.position_24h !== null ? btcData.position_24h.toFixed(1) + '%' : '--';
+                            document.getElementById('btc-48h').textContent = btcData.position_48h !== null ? btcData.position_48h.toFixed(1) + '%' : '--';
+                        }
+                        
+                        // 更新ETH位置
+                        if (ethData) {
+                            document.getElementById('eth-4h').textContent = ethData.position_4h !== null ? ethData.position_4h.toFixed(1) + '%' : '--';
+                            document.getElementById('eth-12h').textContent = ethData.position_12h !== null ? ethData.position_12h.toFixed(1) + '%' : '--';
+                            document.getElementById('eth-24h').textContent = ethData.position_24h !== null ? ethData.position_24h.toFixed(1) + '%' : '--';
+                            document.getElementById('eth-48h').textContent = ethData.position_48h !== null ? ethData.position_48h.toFixed(1) + '%' : '--';
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('获取BTC/ETH位置数据失败:', err);
+                });
+        }
+        
+        // 历史数据相关变量
+        let historyData = [];
+        let currentHistoryIndex = 0;
+        let autoRefreshInterval = null;
+        
+        // 加载历史数据
+        function loadHistoryData() {
+            const dateInput = document.getElementById('history-date');
+            const selectedDate = dateInput.value;
+            
+            if (!selectedDate) {
+                alert('请选择日期');
+                return;
+            }
+            
+            // 停止自动刷新
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+            
+            fetch(`/api/star-system/history?date=${selectedDate}&limit=500`)
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success && response.data.length > 0) {
+                        historyData = response.data;
+                        currentHistoryIndex = 0;
+                        
+                        // 显示时间轴
+                        document.getElementById('timeline-container').style.display = 'block';
+                        document.getElementById('current-view-info').textContent = `当前查看: ${selectedDate} (共${historyData.length}条记录)`;
+                        
+                        // 渲染时间轴
+                        renderTimeline();
+                        
+                        // 显示第一条数据
+                        displayHistoryRecord(0);
+                    } else {
+                        document.getElementById('loading').style.display = 'none';
+                        alert('该日期没有历史数据');
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('loading').style.display = 'none';
+                    alert('加载历史数据失败: ' + err.message);
+                });
+        }
+        
+        // 加载最新数据
+        function loadLatestData() {
+            historyData = [];
+            currentHistoryIndex = 0;
+            document.getElementById('timeline-container').style.display = 'none';
+            document.getElementById('current-view-info').textContent = '当前查看: 实时数据';
+            
+            // 重启自动刷新
+            if (!autoRefreshInterval) {
+                autoRefreshInterval = setInterval(loadStarSystemData, 30000);
+            }
+            
+            loadStarSystemData();
+        }
+        
+        // 渲染时间轴
+        function renderTimeline() {
+            const container = document.getElementById('timeline-slider');
+            container.innerHTML = '';
+            
+            const totalRecords = historyData.length;
+            historyData.forEach((record, index) => {
+                const marker = document.createElement('div');
+                marker.style.cssText = `
+                    position: absolute;
+                    left: ${(index / (totalRecords - 1)) * 100}%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 8px;
+                    height: 8px;
+                    background: ${index === currentHistoryIndex ? '#fbbf24' : 'rgba(255,255,255,0.3)'};
+                    border-radius: 50%;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                `;
+                marker.onmouseover = () => {
+                    marker.style.background = '#fbbf24';
+                    marker.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                };
+                marker.onmouseout = () => {
+                    if (index !== currentHistoryIndex) {
+                        marker.style.background = 'rgba(255,255,255,0.3)';
+                    }
+                    marker.style.transform = 'translate(-50%, -50%)';
+                };
+                marker.onclick = () => displayHistoryRecord(index);
+                container.appendChild(marker);
+            });
+            
+            updateTimelineInfo();
+        }
+        
+        // 更新时间轴信息
+        function updateTimelineInfo() {
+            if (historyData.length === 0) return;
+            
+            const record = historyData[currentHistoryIndex];
+            document.getElementById('timeline-info').textContent = 
+                `${currentHistoryIndex + 1}/${historyData.length} - ${record.timestamp}`;
+            
+            // 更新按钮状态
+            document.getElementById('btn-prev').disabled = currentHistoryIndex >= historyData.length - 1;
+            document.getElementById('btn-next').disabled = currentHistoryIndex <= 0;
+            
+            // 更新时间轴标记
+            const markers = document.getElementById('timeline-slider').children;
+            for (let i = 0; i < markers.length; i++) {
+                markers[i].style.background = i === currentHistoryIndex ? '#fbbf24' : 'rgba(255,255,255,0.3)';
+            }
+        }
+        
+        // 时间轴导航
+        function timelineNavigate(direction) {
+            if (direction === 'prev' && currentHistoryIndex < historyData.length - 1) {
+                currentHistoryIndex++;
+            } else if (direction === 'next' && currentHistoryIndex > 0) {
+                currentHistoryIndex--;
+            }
+            displayHistoryRecord(currentHistoryIndex);
+        }
+        
+        // 显示历史记录
+        function displayHistoryRecord(index) {
+            if (index < 0 || index >= historyData.length) return;
+            
+            currentHistoryIndex = index;
+            const record = historyData[index];
+            const details = record.details || {};
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+            
+            // 更新汇总数据
+            document.getElementById('total-stars').textContent = record.total_stars || 0;
+            document.getElementById('solid-stars').textContent = record.solid_stars || 0;
+            document.getElementById('hollow-stars').textContent = record.hollow_stars || 0;
+            document.getElementById('solid-percentage').textContent = (record.solid_percentage || 0).toFixed(1) + '%';
+            document.getElementById('hollow-percentage').textContent = (record.hollow_percentage || 0).toFixed(1) + '%';
+            
+            // 更新各项指标（使用details中的数据）
+            if (details.stars) {
+                for (let key in details.stars) {
+                    const el = document.getElementById(key + '-stars');
+                    if (el) el.textContent = details.stars[key] || '---';
+                }
+            }
+            if (details.values) {
+                for (let key in details.values) {
+                    const el = document.getElementById(key + '-value');
+                    if (el) el.textContent = details.values[key] !== undefined ? details.values[key] : '-';
+                }
+            }
+            
+            document.getElementById('update-time').textContent = '历史记录: ' + record.timestamp;
+            
+            updateTimelineInfo();
+        }
+        
+        // 设置日期选择器默认值为今天
+        document.getElementById('history-date').valueAsDate = new Date();
+        
         // 首次加载
         loadStarSystemData();
         
-        // 每30秒自动刷新
-        setInterval(loadStarSystemData, 30000);
+        // 每30秒自动刷新（仅在实时模式下）
+        autoRefreshInterval = setInterval(() => {
+            if (historyData.length === 0) {
+                loadStarSystemData();
+            }
+        }, 30000);
     </script>
 </body>
 </html>

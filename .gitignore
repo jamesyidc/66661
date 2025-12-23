@@ -61,9 +61,14 @@ logs/
 temp_download/
 *.png
 *.txt
+*.out
 !requirements.txt
 !REDEPLOYMENT_SUCCESS.md
 
 # Historical data directories
 2025-*/
 old_panic_files/
+*.corrupted
+*.backup_*
+*.db-shm
+*.db-wal

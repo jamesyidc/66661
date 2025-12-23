@@ -215,6 +215,149 @@
             color: #ef4444;
             font-weight: 600;
         }
+        
+        /* API接口面板 */
+        .api-section {
+            background: rgba(42, 45, 71, 0.95);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .api-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .api-title {
+            font-size: 1.3rem;
+            color: #00d4ff;
+            font-weight: 600;
+        }
+        
+        .api-badge {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .api-content {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .api-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .api-card-title {
+            color: #10b981;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+        
+        .api-url-box {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .api-url {
+            color: #00d4ff;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+            flex: 1;
+        }
+        
+        .copy-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            margin-left: 10px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        .test-btn {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+        }
+        
+        .api-info {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        
+        .api-info strong {
+            color: #fff;
+        }
+        
+        .api-result {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #10b981;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: none;
+        }
+        
+        .api-result::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .api-result::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .api-result::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.5);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -246,6 +389,72 @@
                 <div class="stat-label">数据记录</div>
                 <div class="stat-value neutral" id="totalRecords">-</div>
                 <div class="stat-label">历史数据点</div>
+            </div>
+        </div>
+        
+        <!-- API接口面板 -->
+        <div class="api-section">
+            <div class="api-header">
+                <h2 class="api-title">🔌 买点信号API接口</h2>
+                <span class="api-badge">GET 请求</span>
+            </div>
+            <div class="api-content">
+                <div class="api-card">
+                    <div class="api-card-title">📋 接口地址</div>
+                    <div class="api-url-box">
+                        <span class="api-url" id="apiUrl">https://5000-iz6uddj6rs3xe48ilsyqq-b237eb32.sandbox.novita.ai/api/trading-signals/buy-points</span>
+                        <button class="copy-btn" onclick="copyApiUrl()">📋 复制</button>
+                    </div>
+                    <button class="test-btn" onclick="testApi()">🧪 测试接口</button>
+                    <div id="apiResult" class="api-result"></div>
+                </div>
+                
+                <div class="api-card">
+                    <div class="api-card-title">📊 返回数据说明</div>
+                    <div class="api-info">
+                        <strong>买点类型：</strong><br>
+                        • <span style="color: #10b981;">买点1</span>：支撑线买入（风险低，仓位30%，分3次）<br>
+                        • <span style="color: #f59e0b;">买点2</span>：回调买入（风险中，仓位20%，分2次）<br>
+                        • <span style="color: #ef4444;">买点3</span>：空转多买入（风险高，动态仓位，分2次）<br><br>
+                        
+                        <strong>数据结构：</strong><br>
+                        • summary: 统计摘要（各买点数量）<br>
+                        • buy_points: 按类型分组的信号<br>
+                        • all_signals: 所有信号列表<br>
+                        • rules: 买点规则说明<br><br>
+                        
+                        <strong>信号字段：</strong><br>
+                        • symbol: 币种符号<br>
+                        • current_price: 当前价格<br>
+                        • suggested_position: 建议仓位<br>
+                        • distance_to_support: 距支撑线距离<br>
+                        • rsi_5m/1h: RSI指标<br>
+                        • recommended: 是否推荐
+                    </div>
+                </div>
+                
+                <div class="api-card">
+                    <div class="api-card-title">💡 使用示例</div>
+                    <div class="api-info">
+                        <strong>Python:</strong>
+                        <div class="api-url-box" style="flex-direction: column; align-items: flex-start;">
+                            <code style="color: #10b981; font-size: 0.85rem;">
+import requests<br>
+url = "https://5000-iz6uddj6rs3xe48ilsyqq-b237eb32.sandbox.novita.ai/api/trading-signals/buy-points"<br>
+response = requests.get(url)<br>
+data = response.json()<br>
+print(f"总信号: {data['summary']['total_signals']}")
+                            </code>
+                        </div>
+                        <br>
+                        <strong>cURL:</strong>
+                        <div class="api-url-box" style="flex-direction: column; align-items: flex-start;">
+                            <code style="color: #00d4ff; font-size: 0.85rem;">
+curl "https://5000-iz6uddj6rs3xe48ilsyqq-b237eb32.sandbox.novita.ai/api/trading-signals/buy-points"
+                            </code>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -293,6 +502,68 @@
         let chart = null;
         let currentPage = 0;
         let currentTimeRange = '12h';
+        
+        // 复制API地址
+        function copyApiUrl() {
+            const apiUrl = document.getElementById('apiUrl').textContent;
+            navigator.clipboard.writeText(apiUrl).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ 已复制';
+                btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                }, 2000);
+            }).catch(err => {
+                alert('复制失败，请手动复制');
+            });
+        }
+        
+        // 测试API接口
+        async function testApi() {
+            const resultDiv = document.getElementById('apiResult');
+            const testBtn = event.target;
+            const originalText = testBtn.textContent;
+            
+            testBtn.textContent = '⏳ 测试中...';
+            testBtn.disabled = true;
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在请求API，请稍候...';
+            
+            try {
+                const apiUrl = document.getElementById('apiUrl').textContent;
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                // 格式化显示结果
+                const formatted = JSON.stringify(data, null, 2);
+                resultDiv.textContent = formatted;
+                resultDiv.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+                
+                // 显示统计信息
+                if (data.success) {
+                    const summary = data.summary;
+                    const statsText = `\n📊 统计摘要：\n总信号数: ${summary.total_signals}\n买点1: ${summary.buy_point_1_count}个\n买点2: ${summary.buy_point_2_count}个\n买点3: ${summary.buy_point_3_count}个\n\n`;
+                    resultDiv.textContent = statsText + '完整JSON数据：\n' + formatted;
+                }
+                
+                testBtn.textContent = '✅ 测试成功';
+                setTimeout(() => {
+                    testBtn.textContent = originalText;
+                    testBtn.disabled = false;
+                }, 2000);
+                
+            } catch (error) {
+                resultDiv.textContent = '❌ 请求失败：' + error.message;
+                resultDiv.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                testBtn.textContent = '❌ 测试失败';
+                setTimeout(() => {
+                    testBtn.textContent = originalText;
+                    testBtn.disabled = false;
+                }, 2000);
+            }
+        }
         
         // 初始化图表
         function initChart() {
@@ -488,6 +759,77 @@
             // 每30秒刷新一次数据
             setInterval(loadData, 30000);
         };
+        
+        // API接口功能函数
+        function copyApiUrl() {
+            const apiUrl = document.getElementById('apiUrl').textContent;
+            navigator.clipboard.writeText(apiUrl).then(() => {
+                alert('✅ API地址已复制到剪贴板！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                // 备用方案：创建临时输入框
+                const tempInput = document.createElement('input');
+                tempInput.value = apiUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                alert('✅ API地址已复制到剪贴板！');
+            });
+        }
+        
+        function testApi() {
+            const resultDiv = document.getElementById('apiResult');
+            const testBtn = event.target;
+            
+            // 显示加载状态
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '⏳ 正在请求API...';
+            testBtn.disabled = true;
+            testBtn.textContent = '⏳ 请求中...';
+            
+            // 获取当前的API URL
+            const apiUrl = document.getElementById('apiUrl').textContent;
+            
+            // 发起API请求
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 格式化显示结果
+                    resultDiv.textContent = JSON.stringify(data, null, 2);
+                    resultDiv.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+                    
+                    // 显示简要统计
+                    const summary = data.summary || {};
+                    const statsText = `
+✅ API请求成功！
+
+📊 数据摘要:
+• 总信号数: ${summary.total_signals || 0}
+• 买点1数量: ${summary.buy_point_1_count || 0}
+• 买点2数量: ${summary.buy_point_2_count || 0}
+• 买点3数量: ${summary.buy_point_3_count || 0}
+
+📋 完整JSON数据:
+${JSON.stringify(data, null, 2)}
+                    `;
+                    resultDiv.textContent = statsText;
+                })
+                .catch(error => {
+                    resultDiv.textContent = `❌ 请求失败: ${error.message}`;
+                    resultDiv.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                    console.error('API请求错误:', error);
+                })
+                .finally(() => {
+                    testBtn.disabled = false;
+                    testBtn.textContent = '🧪 测试接口';
+                });
+        }
         
         // 响应式图表
         window.onresize = function() {

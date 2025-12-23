@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAR斜率系统 V2.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .nav-buttons {
+            margin-top: 15px;
+        }
+
+        .nav-buttons a {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-right: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .nav-buttons a:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .stat-card.long .value {
+            color: #48bb78;
+        }
+
+        .stat-card.short .value {
+            color: #f56565;
+        }
+
+        .data-table {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .table-header h2 {
+            color: #2d3748;
+            font-size: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f7fafc;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: #2d3748;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .direction-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .direction-badge.long {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .direction-badge.short {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .anomaly-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #fbd38d;
+            color: #7c2d12;
+        }
+
+        .extreme-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #fc8181;
+            color: #742a2a;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #742a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .positive {
+            color: #48bb78;
+        }
+
+        .negative {
+            color: #f56565;
+        }
+
+        .last-update {
+            text-align: center;
+            color: #718096;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+        
+        /* 历史表格样式 */
+        .history-table-container {
+            margin-top: 25px;
+        }
+        
+        .history-table-container table tbody tr.latest {
+            background: #fef3c7 !important;
+            font-weight: 600;
+        }
+        
+        .history-table-container .sequence-number {
+            display: inline-block;
+            padding: 3px 10px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .history-table-container .neutral {
+            color: #718096;
+        }
+
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        .filter-section h3 {
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-controls select {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-controls select:hover {
+            border-color: #667eea;
+        }
+
+        .filter-controls select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .filter-controls button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-controls button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .single-coin-detail {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            display: none;
+            border: 2px solid #667eea;
+        }
+
+        .single-coin-detail.active {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .single-coin-detail h3 {
+            color: #2d3748;
+            font-size: 22px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .detail-header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .detail-header-actions a {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .detail-header-actions a:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            padding: 18px;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .detail-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .detail-item .label {
+            font-size: 13px;
+            color: #718096;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .detail-item .value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .detail-item.highlight {
+            background: linear-gradient(135deg, #fef5e7 0%, #fef9e7 100%);
+            border-left-color: #f39c12;
+        }
+
+        .detail-item.highlight .value {
+            color: #f39c12;
+        }
+
+        .detail-item.direction-long {
+            background: linear-gradient(135deg, #e8f8f5 0%, #d5f4e6 100%);
+            border-left-color: #48bb78;
+        }
+
+        .detail-item.direction-long .value {
+            color: #48bb78;
+        }
+
+        .detail-item.direction-short {
+            background: linear-gradient(135deg, #fadbd8 0%, #f5eef8 100%);
+            border-left-color: #f56565;
+        }
+
+        .detail-item.direction-short .value {
+            color: #f56565;
+        }
+
+        .close-detail-btn {
+            background: #e2e8f0;
+            color: #2d3748;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .close-detail-btn:hover {
+            background: #cbd5e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 SAR斜率系统 V2.0</h1>
+            <p class="subtitle">实时监控27个币种的SAR多空趋势、持续时间、差值变化、异常检测</p>
+            <div class="nav-buttons">
+                <a href="/">🏠 返回首页</a>
+                <a href="#" onclick="loadData(); return false;">🔄 刷新数据</a>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <h3>🔍 单币种跟踪</h3>
+            <div class="filter-controls">
+                <select id="coin-select">
+                    <option value="">选择币种...</option>
+                </select>
+                <button onclick="showCoinDetail()">📊 查看详情</button>
+                <button onclick="clearCoinDetail()">✖️ 清除</button>
+            </div>
+        </div>
+
+        <div class="single-coin-detail" id="coin-detail">
+            <h3>
+                <span id="coin-title">币种详情</span>
+                <div class="detail-header-actions">
+                    <a href="#" id="view-track-link" target="_blank" style="display:none;">📊 完整跟踪</a>
+                    <a href="#" id="view-chart-link" target="_blank" style="display:none;">📈 查看图表</a>
+                    <button class="close-detail-btn" onclick="clearCoinDetail()">✖️ 关闭</button>
+                </div>
+            </h3>
+            <div class="detail-grid">
+                <div class="detail-item" id="detail-direction-item">
+                    <div class="label">当前方向</div>
+                    <div class="value" id="detail-direction">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">序号</div>
+                    <div class="value" id="detail-sequence">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">SAR值</div>
+                    <div class="value" id="detail-sar">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">币价</div>
+                    <div class="value" id="detail-price">-</div>
+                </div>
+                <div class="detail-item highlight">
+                    <div class="label">当天平均差值%</div>
+                    <div class="value" id="detail-avg-1day">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">3天平均差值%</div>
+                    <div class="value" id="detail-avg-3day">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">7天平均差值%</div>
+                    <div class="value" id="detail-avg-7day">-</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">15天平均差值%</div>
+                    <div class="value" id="detail-avg-15day">-</div>
+                </div>
+            </div>
+            
+            <!-- 历史数据表格 -->
+            <div class="history-table-container" id="history-table-container" style="margin-top: 25px; display: none;">
+                <h4 style="color: #2d3748; margin-bottom: 15px; font-size: 16px;">📊 完整历史数据（最近30天）</h4>
+                <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+                    <table style="width: 100%; font-size: 13px;">
+                        <thead style="position: sticky; top: 0; background: #f7fafc; z-index: 10;">
+                            <tr>
+                                <th>日期时间</th>
+                                <th>方向</th>
+                                <th>序号</th>
+                                <th>币价</th>
+                                <th>SAR值</th>
+                                <th>持续时间</th>
+                                <th>差值</th>
+                                <th>差值%</th>
+                                <th>当天平均%</th>
+                                <th>偏离%</th>
+                                <th>信号</th>
+                                <th>3天平均%</th>
+                                <th>7天平均%</th>
+                                <th>15天平均%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <tr><td colspan="14" style="text-align:center; padding:40px; color:#718096;">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="label">监控币种</div>
+                <div class="value" id="total-symbols">-</div>
+            </div>
+            <div class="stat-card long">
+                <div class="label">📈 多头币种</div>
+                <div class="value" id="long-count">-</div>
+            </div>
+            <div class="stat-card short">
+                <div class="label">📉 空头币种</div>
+                <div class="value" id="short-count">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">⚠️ 异常币种</div>
+                <div class="value" id="anomaly-count">-</div>
+            </div>
+        </div>
+
+        <div class="data-table">
+            <div class="table-header">
+                <h2>实时SAR斜率数据</h2>
+            </div>
+            <div id="table-container">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+
+        <div class="last-update" id="last-update"></div>
+    </div>
+
+    <script>
+        function loadData() {
+            fetch('/api/sar-slope/latest')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateStats(data.stats);
+                        updateTable(data.data);
+                        document.getElementById('last-update').textContent = 
+                            `最后更新: ${data.timestamp}`;
+                    } else {
+                        showError(data.error);
+                    }
+                })
+                .catch(error => {
+                    showError(error.message);
+                });
+        }
+
+        function updateStats(stats) {
+            document.getElementById('total-symbols').textContent = stats.total_symbols;
+            document.getElementById('long-count').textContent = stats.long_count;
+            document.getElementById('short-count').textContent = stats.short_count;
+            document.getElementById('anomaly-count').textContent = stats.anomaly_count;
+        }
+
+        function updateTable(data) {
+            let html = '<table><thead><tr>';
+            html += '<th>币种</th>';
+            html += '<th>方向</th>';
+            html += '<th>序号</th>';
+            html += '<th>SAR值</th>';
+            html += '<th>差值%</th>';
+            html += '<th>当天均值</th>';
+            html += '<th>3天均值</th>';
+            html += '<th>状态</th>';
+            html += '<th>更新时间</th>';
+            html += '</tr></thead><tbody>';
+
+            // 填充币种选择器
+            const coinSelect = document.getElementById('coin-select');
+            if (coinSelect.options.length === 1) {  // 只有默认选项
+                data.forEach(item => {
+                    const symbol = item.symbol.replace('-USDT-SWAP', '');
+                    const option = document.createElement('option');
+                    option.value = item.symbol;
+                    option.textContent = symbol;
+                    coinSelect.appendChild(option);
+                });
+            }
+
+            data.forEach(item => {
+                const symbol = item.symbol.replace('-USDT-SWAP', '');
+                const direction = item.direction === 'long' ? '多头' : '空头';
+                const directionClass = item.direction;
+                const directionEmoji = item.direction === 'long' ? '📈' : '📉';
+                
+                html += '<tr>';
+                html += `<td><strong>${symbol} <a href="/sar-slope/track/${item.symbol}" style="color: #48bb78; text-decoration: none;" title="查看完整跟踪数据">📊</a> <a href="/sar-slope/coin/${item.symbol}" style="color: #667eea; text-decoration: none;" title="查看详情">📈</a></strong></td>`;
+                html += `<td><span class="direction-badge ${directionClass}">${directionEmoji} ${direction}</span></td>`;
+                html += `<td>${directionEmoji}${String(item.sequence).padStart(2, '0')}</td>`;
+                html += `<td>${item.sar_value ? item.sar_value.toFixed(4) : '-'}</td>`;
+                
+                // 差值百分比
+                if (item.diff_percent !== null) {
+                    const diffClass = item.diff_percent >= 0 ? 'positive' : 'negative';
+                    html += `<td class="${diffClass}">${item.diff_percent.toFixed(5)}%</td>`;
+                } else {
+                    html += '<td>-</td>';
+                }
+                
+                // 当天平均值
+                html += `<td><strong>${item.avg_1day ? item.avg_1day.toFixed(5) + '%' : '-'}</strong></td>`;
+                
+                // 3天平均值
+                html += `<td>${item.avg_3day ? item.avg_3day.toFixed(5) + '%' : '-'}</td>`;
+                
+                // 状态标记
+                html += '<td>';
+                if (item.is_anomaly) {
+                    html += '<span class="anomaly-badge">⚠️ 异常</span> ';
+                }
+                if (item.is_extreme) {
+                    const extremeText = item.extreme_type === 'high' ? '🔺高点' : '🔻低点';
+                    html += `<span class="extreme-badge">${extremeText}</span>`;
+                }
+                if (!item.is_anomaly && !item.is_extreme) {
+                    html += '-';
+                }
+                html += '</td>';
+                
+                html += `<td>${item.datetime}</td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('table-container').innerHTML = html;
+        }
+
+        function showError(message) {
+            document.getElementById('table-container').innerHTML = 
+                `<div class="error">错误: ${message}</div>`;
+        }
+
+        let allData = [];
+
+        function loadData() {
+            fetch('/api/sar-slope/latest')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        allData = data.data;  // 保存数据供单币种查看使用
+                        updateStats(data.stats);
+                        updateTable(data.data);
+                        document.getElementById('last-update').textContent = 
+                            `最后更新: ${data.timestamp}`;
+                    } else {
+                        showError(data.error);
+                    }
+                })
+                .catch(error => {
+                    showError(error.message);
+                });
+        }
+
+        function showCoinDetail() {
+            const coinSelect = document.getElementById('coin-select');
+            const selectedSymbol = coinSelect.value;
+            
+            if (!selectedSymbol) {
+                alert('请先选择一个币种');
+                return;
+            }
+
+            const coinData = allData.find(item => item.symbol === selectedSymbol);
+            
+            if (!coinData) {
+                alert('未找到该币种数据');
+                return;
+            }
+
+            const symbol = selectedSymbol.replace('-USDT-SWAP', '');
+            const direction = coinData.direction === 'long' ? '📈 多头' : '📉 空头';
+            const directionEmoji = coinData.direction === 'long' ? '📈' : '📉';
+            const directionClass = coinData.direction === 'long' ? 'direction-long' : 'direction-short';
+            
+            // 更新标题
+            document.getElementById('coin-title').textContent = `${symbol} - 详细数据`;
+            
+            // 更新链接
+            document.getElementById('view-track-link').href = `/sar-slope/track/${selectedSymbol}`;
+            document.getElementById('view-track-link').style.display = 'inline-block';
+            document.getElementById('view-chart-link').href = `/sar-slope/coin/${selectedSymbol}`;
+            document.getElementById('view-chart-link').style.display = 'inline-block';
+            
+            // 更新方向（添加颜色类）
+            const directionItem = document.getElementById('detail-direction-item');
+            directionItem.className = `detail-item ${directionClass}`;
+            document.getElementById('detail-direction').textContent = direction;
+            
+            // 更新序号
+            document.getElementById('detail-sequence').textContent = `${directionEmoji}${String(coinData.sequence).padStart(2, '0')}`;
+            
+            // 更新SAR值
+            document.getElementById('detail-sar').textContent = coinData.sar_value ? coinData.sar_value.toFixed(6) : '-';
+            
+            // 更新币价（使用收盘价）
+            document.getElementById('detail-price').textContent = coinData.price_close ? coinData.price_close.toFixed(6) : '-';
+            
+            // 当天平均值（高亮显示）
+            document.getElementById('detail-avg-1day').textContent = 
+                coinData.avg_1day ? coinData.avg_1day.toFixed(6) + '%' : '-';
+            
+            // 3天平均值
+            document.getElementById('detail-avg-3day').textContent = 
+                coinData.avg_3day ? coinData.avg_3day.toFixed(6) + '%' : '-';
+            
+            // 7天平均值
+            document.getElementById('detail-avg-7day').textContent = 
+                coinData.avg_7day ? coinData.avg_7day.toFixed(6) + '%' : '-';
+            
+            // 15天平均值
+            document.getElementById('detail-avg-15day').textContent = 
+                coinData.avg_15day ? coinData.avg_15day.toFixed(6) + '%' : '-';
+            
+            // 显示详情区域并滚动到视图
+            const detailElement = document.getElementById('coin-detail');
+            detailElement.classList.add('active');
+            detailElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // 加载历史数据
+            loadHistoryData(selectedSymbol);
+        }
+        
+        function loadHistoryData(symbol) {
+            const historyTableBody = document.getElementById('history-table-body');
+            const historyTableContainer = document.getElementById('history-table-container');
+            
+            // 显示加载状态
+            historyTableBody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:40px; color:#718096;">加载中...</td></tr>';
+            historyTableContainer.style.display = 'block';
+            
+            // 获取历史数据
+            fetch(`/api/sar-slope/history/${symbol}?days=30&limit=10000`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data.length > 0) {
+                        renderHistoryTable(data.data);
+                    } else {
+                        historyTableBody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:40px; color:#718096;">暂无数据</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('加载历史数据失败:', error);
+                    historyTableBody.innerHTML = '<tr><td colspan="14" style="text-align:center; padding:40px; color:#f56565;">加载失败</td></tr>';
+                });
+        }
+        
+        function renderHistoryTable(data) {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+            
+            data.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                if (index === 0) tr.className = 'latest';
+                
+                // 计算持续时间
+                const minutes = row.sequence_number * 5;
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                const durationText = hours > 0 ? `${hours}h${mins}m` : `${mins}m`;
+                
+                // 计算偏离百分比：(差值% - 当天平均%) / 当天平均% × 100
+                let deviationPercent = null;
+                let deviationClass = 'neutral';
+                let deviationText = '-';
+                
+                if (row.sar_diff_percent != null && row.avg_1day != null && row.avg_1day !== 0) {
+                    deviationPercent = ((row.sar_diff_percent - row.avg_1day) / row.avg_1day) * 100;
+                    deviationClass = deviationPercent > 0 ? 'positive' : (deviationPercent < 0 ? 'negative' : 'neutral');
+                    const sign = deviationPercent > 0 ? '+' : '';
+                    deviationText = `${sign}${deviationPercent.toFixed(2)}%`;
+                }
+                
+                // 判断交易信号
+                let signalText = '-';
+                let signalClass = 'neutral';
+                let signalEmoji = '';
+                
+                if (deviationPercent !== null) {
+                    if (row.sar_direction === 'long') {
+                        // 多头区间
+                        if (deviationPercent > 0) {
+                            signalText = '偏空';
+                            signalClass = 'negative';
+                            signalEmoji = '🔴';
+                        } else if (deviationPercent < 0) {
+                            signalText = '偏多';
+                            signalClass = 'positive';
+                            signalEmoji = '🟢';
+                        }
+                    } else {
+                        // 空头区间
+                        if (deviationPercent > 0) {
+                            signalText = '偏多';
+                            signalClass = 'positive';
+                            signalEmoji = '🟢';
+                        } else if (deviationPercent < 0) {
+                            signalText = '偏空';
+                            signalClass = 'negative';
+                            signalEmoji = '🔴';
+                        }
+                    }
+                }
+                
+                tr.innerHTML = `
+                    <td>${row.datetime_beijing || '-'}</td>
+                    <td>
+                        <span class="direction-badge ${row.sar_direction}">
+                            ${row.sar_direction === 'long' ? '📈 多头' : '📉 空头'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="sequence-number">
+                            ${row.sar_direction === 'long' ? '多' : '空'}${String(row.sequence_number).padStart(2, '0')}
+                        </span>
+                    </td>
+                    <td>${row.price_close ? row.price_close.toFixed(6) : '-'}</td>
+                    <td>${row.sar_value ? row.sar_value.toFixed(6) : '-'}</td>
+                    <td>${durationText}</td>
+                    <td class="${row.sar_diff >= 0 ? 'positive' : 'negative'}">
+                        ${row.sar_diff != null ? row.sar_diff.toFixed(6) : '-'}
+                    </td>
+                    <td class="${row.sar_diff_percent >= 0 ? 'positive' : 'negative'}">
+                        ${row.sar_diff_percent != null ? row.sar_diff_percent.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_1day != null ? row.avg_1day.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="${deviationClass}" style="font-weight: 600;">
+                        ${deviationText}
+                    </td>
+                    <td class="${signalClass}" style="font-weight: 700; font-size: 13px;">
+                        ${signalEmoji} ${signalText}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_3day != null ? row.avg_3day.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_7day != null ? row.avg_7day.toFixed(6) + '%' : '-'}
+                    </td>
+                    <td class="neutral">
+                        ${row.avg_15day != null ? row.avg_15day.toFixed(6) + '%' : '-'}
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        function clearCoinDetail() {
+            document.getElementById('coin-select').value = '';
+            document.getElementById('coin-detail').classList.remove('active');
+            document.getElementById('view-track-link').style.display = 'none';
+            document.getElementById('view-chart-link').style.display = 'none';
+            document.getElementById('history-table-container').style.display = 'none';
+        }
+
+        // 页面加载时自动获取数据
+        loadData();
+
+        // 每30秒自动刷新
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>

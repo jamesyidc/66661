@@ -318,9 +318,39 @@
             </div>
         </div>
 
-        <!-- 1小时走势图 -->
+        <!-- 平均位置显示 -->
+        <div class="chart-container" style="margin-bottom: 30px;">
+            <div class="chart-title">📍 市场平均位置</div>
+            <div class="index-info" style="margin-top: 0;">
+                <div class="index-info-item">
+                    <div class="index-info-label">4小时平均位置</div>
+                    <div class="index-info-value" id="position4h" style="color: #3b82f6;">--</div>
+                </div>
+                <div class="index-info-item">
+                    <div class="index-info-label">12小时平均位置</div>
+                    <div class="index-info-value" id="position12h" style="color: #8b5cf6;">--</div>
+                </div>
+                <div class="index-info-item">
+                    <div class="index-info-label">24小时平均位置</div>
+                    <div class="index-info-value" id="position24h" style="color: #ec4899;">--</div>
+                </div>
+                <div class="index-info-item">
+                    <div class="index-info-label">48小时平均位置</div>
+                    <div class="index-info-value" id="position48h" style="color: #f59e0b;">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 12小时走势图（分页） -->
         <div class="chart-container">
-            <div class="chart-title">📈 指数1小时走势图</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="chart-title" style="margin-bottom: 0;">📈 指数12小时走势图</div>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <button id="prevPageBtn" onclick="changePage(-1)" style="padding: 8px 16px; background: rgba(255, 217, 61, 0.2); border: 1px solid #ffd93d; border-radius: 6px; color: #ffd93d; cursor: pointer; font-size: 14px; transition: all 0.3s;">← 上一页</button>
+                    <span id="pageInfo" style="color: #ffd93d; font-weight: 600; min-width: 120px; text-align: center;">第 1 / 1 页</span>
+                    <button id="nextPageBtn" onclick="changePage(1)" style="padding: 8px 16px; background: rgba(255, 217, 61, 0.2); border: 1px solid #ffd93d; border-radius: 6px; color: #ffd93d; cursor: pointer; font-size: 14px; transition: all 0.3s;">下一页 →</button>
+                </div>
+            </div>
             <canvas id="indexChart" class="chart-canvas"></canvas>
         </div>
 
@@ -346,6 +376,8 @@
         let indexData = {};
         let chartCtx = null;
         let klineCtx = null;
+        let currentPage = 1;
+        let totalPages = 1;
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -405,13 +437,17 @@
                 const componentsResponse = await fetch(`${API_BASE}/components`);
                 const componentsData = await componentsResponse.json();
 
-                // 获取历史数据
-                const historyResponse = await fetch(`${API_BASE}/history`);
+                // 获取历史数据（分页）
+                const historyResponse = await fetch(`${API_BASE}/history?page=${currentPage}`);
                 const historyData = await historyResponse.json();
 
                 // 获取K线数据
                 const klinesResponse = await fetch(`${API_BASE}/klines`);
                 const klinesData = await klinesResponse.json();
+
+                // 获取平均位置数据
+                const positionResponse = await fetch('/api/position/summary');
+                const positionData = await positionResponse.json();
 
                 if (currentData.success) {
                     updateIndexDisplay(currentData.data);
@@ -423,11 +459,18 @@
                 }
 
                 if (historyData.success) {
+                    totalPages = historyData.total_pages || 1;
+                    currentPage = historyData.current_page || 1;
+                    updatePageInfo();
                     drawChart(historyData.data);
                 }
 
                 if (klinesData.success) {
                     drawKlineChart(klinesData.data);
+                }
+
+                if (positionData.success && positionData.averages) {
+                    updatePositionDisplay(positionData.averages);
                 }
 
             } catch (error) {
@@ -477,7 +520,39 @@
             }).join('');
         }
 
-        // 绘制图表
+        // 更新平均位置显示
+        function updatePositionDisplay(positions) {
+            document.getElementById('position4h').textContent = positions['4h'] !== undefined ? positions['4h'].toFixed(2) : '--';
+            document.getElementById('position12h').textContent = positions['12h'] !== undefined ? positions['12h'].toFixed(2) : '--';
+            document.getElementById('position24h').textContent = positions['24h'] !== undefined ? positions['24h'].toFixed(2) : '--';
+            document.getElementById('position48h').textContent = positions['48h'] !== undefined ? positions['48h'].toFixed(2) : '--';
+        }
+
+        // 翻页功能
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            if (newPage < 1 || newPage > totalPages) return;
+            currentPage = newPage;
+            updateData();
+        }
+
+        // 更新页码信息
+        function updatePageInfo() {
+            document.getElementById('pageInfo').textContent = `第 ${currentPage} / ${totalPages} 页`;
+            document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+            document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+            
+            // 更新按钮样式
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            
+            prevBtn.style.opacity = currentPage <= 1 ? '0.5' : '1';
+            prevBtn.style.cursor = currentPage <= 1 ? 'not-allowed' : 'pointer';
+            nextBtn.style.opacity = currentPage >= totalPages ? '0.5' : '1';
+            nextBtn.style.cursor = currentPage >= totalPages ? 'not-allowed' : 'pointer';
+        }
+
+        // 绘制图表（带日期分割线）
         function drawChart(history) {
             if (!history || history.length < 2) return;
 
@@ -485,7 +560,7 @@
             const ctx = chartCtx;
             const rect = canvas.getBoundingClientRect();
             
-            const padding = { top: 40, right: 80, bottom: 40, left: 60 };
+            const padding = { top: 40, right: 80, bottom: 60, left: 60 };
             const chartWidth = rect.width - padding.left - padding.right;
             const chartHeight = rect.height - padding.top - padding.bottom;
 
@@ -578,6 +653,41 @@
             ctx.font = 'bold 14px Arial';
             const label = (lastPoint.change_percent >= 0 ? '+' : '') + lastPoint.change_percent.toFixed(2) + '%';
             ctx.fillText(label, lastX + 12, lastY + 5);
+
+            // 绘制日期分割竖线
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#ffd93d';
+            ctx.textAlign = 'center';
+
+            let lastDate = null;
+            history.forEach((point, index) => {
+                const date = new Date(point.time);
+                const dateStr = date.toLocaleDateString('zh-CN');
+                
+                // 当日期变化时，绘制竖线
+                if (lastDate && dateStr !== lastDate) {
+                    const x = padding.left + (chartWidth / (history.length - 1)) * index;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x, padding.top);
+                    ctx.lineTo(x, padding.top + chartHeight);
+                    ctx.stroke();
+                    
+                    // 绘制日期标签
+                    ctx.fillText(dateStr, x, padding.top + chartHeight + 30);
+                }
+                lastDate = dateStr;
+            });
+
+            // 绘制第一个日期标签
+            if (history.length > 0) {
+                const firstDate = new Date(history[0].time);
+                const firstDateStr = firstDate.toLocaleDateString('zh-CN');
+                ctx.fillText(firstDateStr, padding.left, padding.top + chartHeight + 30);
+            }
         }
 
         // 绘制K线图（蜡烛图 + 成交量）

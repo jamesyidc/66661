@@ -136,6 +136,7 @@
         .stats-value {
             color: #00d4ff;
             font-weight: 600;
+            margin-left: 8px;
         }
         
         .module-btn {
@@ -177,6 +178,7 @@
             font-weight: 700;
             color: #00d4ff;
             margin-bottom: 5px;
+            margin-left: 8px;
         }
         
         .stat-value.positive {
@@ -265,6 +267,28 @@
         </div>
         
         <div class="modules-grid">
+            <!-- SAR Slope System - Featured -->
+            <div class="module-card" onclick="location.href='/sar-slope'" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%); border: 2px solid #667eea;">
+                <div class="module-icon">📈</div>
+                <h2>SAR斜率系统</h2>
+                <p>5分钟周期SAR数据监测，标注多空位置及持续时间，保留7天数据</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">监测币种:</span>
+                        <span class="stats-value">27个</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">采集周期:</span>
+                        <span class="stats-value">5分钟</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">数据保留:</span>
+                        <span class="stats-value">近7天</span>
+                    </div>
+                </div>
+                <a href="/sar-slope" class="module-btn" style="background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);">进入系统 🆕</a>
+            </div>
+            
             <div class="module-card" onclick="location.href='/query'">
                 <div class="module-icon">🔍</div>
                 <h2>历史数据查询</h2>
@@ -338,8 +362,12 @@
                         <span class="stats-value" id="price-total">29</span>
                     </div>
                     <div class="module-stats-row">
-                        <span class="stats-label">创新高:</span>
+                        <span class="stats-label">当天创新高:</span>
                         <span class="stats-value" style="color: #ef4444;" id="price-high">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">当天创新低:</span>
+                        <span class="stats-value" style="color: #10b981;" id="price-low">-</span>
                     </div>
                     <div class="module-stats-row">
                         <span class="stats-label">最后更新:</span>
@@ -349,26 +377,118 @@
                 <a href="/price-comparison" class="module-btn">进入系统</a>
             </div>
             
-            <div class="module-card" onclick="location.href='/star-system'">
-                <div class="module-icon">⭐</div>
-                <h2>星星系统</h2>
-                <p>14项核心指标，实心星/空心星评分，全方位市场分析</p>
+            <!-- 资金监控系统 -->
+            <div class="module-card" onclick="location.href='/fund-monitor'" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.95) 0%, rgba(37, 99, 235, 0.95) 100%);">
+                <div class="module-icon">💸</div>
+                <h2>资金监控系统</h2>
+                <p>实时监控成交量异常波动，多周期对比，智能预警</p>
                 <div class="module-stats">
                     <div class="module-stats-row">
-                        <span class="stats-label">总星数:</span>
-                        <span class="stats-value" id="star-total">-</span>
+                        <span class="stats-label">监控币种:</span>
+                        <span class="stats-value">27</span>
                     </div>
                     <div class="module-stats-row">
-                        <span class="stats-label">实心星:</span>
-                        <span class="stats-value" style="color: #FFD700;" id="star-solid">-</span>
+                        <span class="stats-label">监控周期:</span>
+                        <span class="stats-value">15/30/60分钟</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">异常阈值:</span>
+                        <span class="stats-value" style="color: #ef4444;">±20%</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">对比基准:</span>
+                        <span class="stats-value">3日平均</span>
+                    </div>
+                </div>
+                <a href="/fund-monitor" class="module-btn">进入系统</a>
+            </div>
+            
+            <!-- 星星系统 -->
+            <div class="module-card" onclick="location.href='/star-system'" style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.95) 0%, rgba(202, 138, 4, 0.95) 100%);">
+                <div class="module-icon">⭐</div>
+                <h2>星星系统</h2>
+                <p>5类趋势分析因子：计次得分、正差、负差、超额涨跌、实体星星</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">计次得分:</span>
+                        <span class="stats-value" id="star-count-score">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">实体星星:</span>
+                        <span class="stats-value" id="star-solid-stars" style="color: #fbbf24;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">空心星星:</span>
+                        <span class="stats-value" id="star-hollow-stars">-</span>
                     </div>
                     <div class="module-stats-row">
                         <span class="stats-label">最后更新:</span>
                         <span class="stats-value" id="star-time">-</span>
                     </div>
                 </div>
-                <a href="/star-system" class="module-btn">查看详情</a>
+                <a href="/star-system" class="module-btn" style="background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);">查看详情</a>
             </div>
+            
+            <!-- 币种池 -->
+            <div class="module-card" onclick="location.href='/coin-pool'" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%);">
+                <div class="module-icon">🎲</div>
+                <h2>币种池</h2>
+                <p>从星星系统筛选的优质币种池，5大维度智能分类</p>
+                <div class="module-stats" style="font-size: 0.8em;">
+                    <div class="module-stats-row">
+                        <span class="stats-label">V1币种:</span>
+                        <span class="stats-value" id="pool-v1-count" style="color: #fbbf24; font-weight: bold;">-</span>
+                        <span class="stats-label" style="margin-left: 10px;">V2币种:</span>
+                        <span class="stats-value" id="pool-v2-count" style="color: #60a5fa; font-weight: bold;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">只有急涨:</span>
+                        <span class="stats-value" id="pool-only-rush-up" style="color: #4ade80;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">急涨>急跌:</span>
+                        <span class="stats-value" id="pool-rush-up-gt-down" style="color: #34d399;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">优先级≥4:</span>
+                        <span class="stats-value" id="pool-priority-high" style="color: #f59e0b;">-</span>
+                    </div>
+                </div>
+                <a href="/coin-pool" class="module-btn">查看详情</a>
+            </div>
+
+            <!-- 实时市场原始数据 -->
+            <div class="module-card" onclick="location.href='/opening-logic'" style="background: linear-gradient(135deg, rgba(255, 107, 107, 0.95) 0%, rgba(255, 142, 83, 0.95) 100%);">
+                <div class="module-icon">📊</div>
+                <h2>实时市场原始数据</h2>
+                <p>当前数据源自于最上方5类趋势分析因子</p>
+                <div class="module-stats" style="font-size: 0.85em;">
+                    <div class="module-stats-row">
+                        <span class="stats-label">急涨星星:</span>
+                        <span class="stats-value" id="market-solid-stars" style="color: #4ade80; font-weight: bold;">-</span>
+                        <span class="stats-label" style="margin-left: 10px;">空心星星:</span>
+                        <span class="stats-value" id="market-hollow-stars">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">急涨币种:</span>
+                        <span class="stats-value" id="market-rush-up" style="color: #4ade80;">-</span>
+                        <span class="stats-label" style="margin-left: 10px;">急跌币种:</span>
+                        <span class="stats-value" id="market-rush-down" style="color: #f87171;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">BTC 24h:</span>
+                        <span class="stats-value" id="market-btc-change">-</span>
+                        <span class="stats-label" style="margin-left: 10px;">ETH 24h:</span>
+                        <span class="stats-value" id="market-eth-change">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">全网持仓:</span>
+                        <span class="stats-value" id="market-total-position" style="font-weight: bold;">-</span>
+                    </div>
+                </div>
+                <a href="/opening-logic" class="module-btn">查看详情</a>
+            </div>
+
             
             <div class="module-card" onclick="location.href='/monitor'">
                 <div class="module-icon">🔍</div>
@@ -496,8 +616,224 @@
                 </div>
                 <a href="/position-system" class="module-btn">查看位置</a>
             </div>
+            
+            <div class="module-card" onclick="location.href='/support-resistance'">
+                <div class="module-icon">📈</div>
+                <h2>支撑压力线系统</h2>
+                <p>27币种永续合约支撑压力线，7天/48小时双周期监控</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">监控币种:</span>
+                        <span class="stats-value" id="sr-count">27</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="sr-time">-</span>
+                    </div>
+                </div>
+                
+                <!-- 4种预警情况 -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0;">
+                    <!-- 情况1: 支撑2→压力1 (<=5%) -->
+                    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px;">
+                        <div style="color: #10b981; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;">情况1: 接近支撑2</div>
+                        <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem; margin-bottom: 8px;">支撑2→压力1 (≤5%)</div>
+                        <div id="sr-scenario-1" style="color: #fff; font-size: 0.9rem; min-height: 20px;">-</div>
+                    </div>
+                    
+                    <!-- 情况2: 支撑1→压力2 (<=5%) -->
+                    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px;">
+                        <div style="color: #10b981; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;">情况2: 接近支撑1</div>
+                        <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem; margin-bottom: 8px;">支撑1→压力2 (≤5%)</div>
+                        <div id="sr-scenario-2" style="color: #fff; font-size: 0.9rem; min-height: 20px;">-</div>
+                    </div>
+                    
+                    <!-- 情况3: 支撑1→压力2 (>=95%) -->
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px;">
+                        <div style="color: #ef4444; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;">情况3: 接近压力2</div>
+                        <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem; margin-bottom: 8px;">支撑1→压力2 (≥95%)</div>
+                        <div id="sr-scenario-3" style="color: #fff; font-size: 0.9rem; min-height: 20px;">-</div>
+                    </div>
+                    
+                    <!-- 情况4: 支撑1→压力1 (>=95%) -->
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px;">
+                        <div style="color: #ef4444; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;">情况4: 接近压力1</div>
+                        <div style="color: rgba(255,255,255,0.6); font-size: 0.75rem; margin-bottom: 8px;">支撑1→压力1 (≥95%)</div>
+                        <div id="sr-scenario-4" style="color: #fff; font-size: 0.9rem; min-height: 20px;">-</div>
+                    </div>
+                </div>
+                
+                <a href="/support-resistance" class="module-btn">查看详情</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/trading-signals'" style="border: 2px solid rgba(168, 85, 247, 0.3);">
+                <div class="module-icon">🎯</div>
+                <h2>决策-交易信号系统</h2>
+                <p>基于支撑线、创新低、计次得分等多维度分析，自动识别做多买点</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">买点1信号:</span>
+                        <span class="stats-value" id="ts-buy1-count" style="color: #10b981;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">买点2信号:</span>
+                        <span class="stats-value" id="ts-buy2-count" style="color: #3b82f6;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">总监控币种:</span>
+                        <span class="stats-value" id="ts-total-count">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="ts-time">-</span>
+                    </div>
+                </div>
+                
+                <!-- 买点说明 -->
+                <div style="margin: 15px 0; padding: 12px; background: rgba(168, 85, 247, 0.1); border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.3);">
+                    <div style="color: #a855f7; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px;">买点逻辑</div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.75rem; line-height: 1.5;">
+                        • 买点1: 距支撑线1<5% + 创新低<3 + 计次得分⭐/★ + 急涨>急跌<br/>
+                        • 买点2: 回调买入 (条件1-3 + 空头>20 + 5分钟SAR第三象限 + 5分钟RSI<30)
+                    </div>
+                </div>
+                
+                <a href="/trading-signals" class="module-btn" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);">查看信号</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/kline-indicators'" style="border: 2px solid rgba(59, 130, 246, 0.3);">
+                <div class="module-icon">📊</div>
+                <h2>决策-K线指标系统</h2>
+                <p>OKEx永续合约技术指标采集，27币种5分钟/1小时K线数据与SAR多空分析</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">采集器状态:</span>
+                        <span class="stats-value" id="kline-status" style="color: #10b981;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">监控币种:</span>
+                        <span class="stats-value">27</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">数据条数:</span>
+                        <span class="stats-value" id="kline-indicators-count">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后采集:</span>
+                        <span class="stats-value" id="kline-last-time" style="font-size: 0.7rem;">-</span>
+                    </div>
+                </div>
+                
+                <!-- 指标说明 -->
+                <div style="margin: 15px 0; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                    <div style="color: #3b82f6; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px;">采集指标</div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.75rem; line-height: 1.5;">
+                        • SAR（多空判断 + 象限位置 + 多转空/空转多计数）<br/>
+                        • RSI(14) 相对强弱指数<br/>
+                        • 布林带（UB/BOLL/LB）<br/>
+                        • 5分钟振幅和涨跌幅
+                    </div>
+                </div>
+                
+                <a href="/kline-indicators" class="module-btn" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">查看指标</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/v1v2-monitor'">
+                <div class="module-icon">💰</div>
+                <h2>V1V2成交系统</h2>
+                <p>27币种5分钟成交额监控，V1/V2级别实时分类</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">V1级别:</span>
+                        <span class="stats-value" id="v1v2-v1-count" style="color: #fc8181;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">V2级别:</span>
+                        <span class="stats-value" id="v1v2-v2-count" style="color: #f6ad55;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="v1v2-time">-</span>
+                    </div>
+                </div>
+                <a href="/v1v2-monitor" class="module-btn">查看成交</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/price-speed-monitor'">
+                <div class="module-icon">⚡</div>
+                <h2>1分钟涨跌速</h2>
+                <p>27币种1分钟涨跌速监控，15秒实时预警</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">上涨预警:</span>
+                        <span class="stats-value" id="price-speed-up-count" style="color: #10b981;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">下跌预警:</span>
+                        <span class="stats-value" id="price-speed-down-count" style="color: #ef4444;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="price-speed-time">-</span>
+                    </div>
+                </div>
+                <a href="/price-speed-monitor" class="module-btn">查看涨跌速</a>
+            </div>
+            
+            <div class="module-card" onclick="location.href='/gdrive-detector'">
+                <div class="module-icon">📡</div>
+                <h2>Google Drive监控</h2>
+                <p>每30秒检测TXT文件更新，实时追踪数据源状态</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">检测状态:</span>
+                        <span class="stats-value" id="gdrive-status" style="color: #10b981;">运行中</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">文件时间:</span>
+                        <span class="stats-value" id="gdrive-file-time">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">延迟:</span>
+                        <span class="stats-value" id="gdrive-delay">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">🆕 最新文件:</span>
+                        <span class="stats-value" id="gdrive-latest-file" style="color: #10b981; font-weight: bold;">-</span>
+                    </div>
+                </div>
+                <a href="/gdrive-detector" class="module-btn">查看监控</a>
+            </div>
+            
+            <!-- TG消息推送系统 -->
+            <div class="module-card" id="tg-card" style="background: linear-gradient(135deg, rgba(34, 139, 230, 0.95) 0%, rgba(29, 78, 216, 0.95) 100%); cursor: pointer;">
+                <div class="module-icon">📱</div>
+                <h2>TG消息推送</h2>
+                <p>实时推送交易信号到Telegram群组，60秒检测一次</p>
+                <div class="module-stats">
+                    <div class="module-stats-row">
+                        <span class="stats-label">运行状态:</span>
+                        <span class="stats-value" id="tg-status" style="color: #10b981;">检测中...</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">已推送:</span>
+                        <span class="stats-value" id="tg-total-sent" style="color: #60a5fa;">-</span>
+                        <span class="stats-label" style="margin-left: 5px;">条</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最近消息:</span>
+                        <span class="stats-value" id="tg-last-message" style="font-size: 0.8em; color: #fbbf24;">-</span>
+                    </div>
+                    <div class="module-stats-row">
+                        <span class="stats-label">最后更新:</span>
+                        <span class="stats-value" id="tg-last-update" style="font-size: 0.8em;">-</span>
+                    </div>
+                </div>
+                <a href="/telegram-dashboard" class="module-btn" id="tg-manage-btn" style="background: linear-gradient(135deg, #228be6 0%, #1d4ed8 100%); position: relative; z-index: 10;">管理面板</a>
+            </div>
         </div>
         
+
         <div class="stats-bar">
             <div class="stat-item">
                 <div class="stat-value" id="roundRushUp">-</div>
@@ -518,6 +854,165 @@
                 <div class="stat-value" id="todayRecords">-</div>
                 <div class="stat-label">今日采集</div>
                 <div class="stat-sublabel" id="updateTime">更新: -</div>
+            </div>
+        </div>
+        
+        <!-- API接口展示区 -->
+        <div class="api-section" style="background: rgba(42, 45, 71, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 40px 30px; margin-top: 40px; animation: fadeInUp 0.8s ease 0.6s both;">
+            <h2 style="text-align: center; color: #00d4ff; font-size: 2rem; margin-bottom: 30px;">
+                🔌 API 接口文档
+            </h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px;">
+                <!-- 支撑压力线API -->
+                <div style="background: rgba(0, 0, 0, 0.2); border-radius: 12px; padding: 25px; border-left: 4px solid #00d4ff;">
+                    <h3 style="color: #00d4ff; font-size: 1.3rem; margin-bottom: 15px;">📈 支撑压力线系统</h3>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 最新数据</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/support-resistance/latest
+                        </code>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 历史数据</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/support-resistance/history/&lt;symbol&gt;?hours=24
+                        </code>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 0.8rem; line-height: 1.5;">
+                        返回27个币种的支撑线和压力线数据，包括7天和48小时的支撑/压力位置
+                    </div>
+                    <a href="/support-resistance" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem; transition: transform 0.2s;">
+                        查看详情 →
+                    </a>
+                </div>
+                
+                <!-- 交易信号系统 -->
+                <div style="background: rgba(0, 0, 0, 0.2); border-radius: 12px; padding: 25px; border-left: 4px solid #a855f7;">
+                    <h3 style="color: #a855f7; font-size: 1.3rem; margin-bottom: 15px;">🎯 决策-交易信号系统</h3>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 信号分析</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/trading-signals/analyze
+                        </code>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 0.8rem; line-height: 1.5;">
+                        基于支撑线、创新低、计次得分、急涨急跌等多维度分析，自动识别做多买点1和买点2信号
+                    </div>
+                    <a href="/trading-signals" style="display: inline-block; margin-top: 15px; padding: 8px 16px; background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem; transition: transform 0.2s;">
+                        查看信号 →
+                    </a>
+                </div>
+                
+                <!-- 位置系统API -->
+                <div style="background: rgba(0, 0, 0, 0.2); border-radius: 12px; padding: 25px; border-left: 4px solid #f59e0b;">
+                    <h3 style="color: #f59e0b; font-size: 1.3rem; margin-bottom: 15px;">📍 位置系统</h3>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 最新数据</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/position/latest
+                        </code>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 统计摘要</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/position/summary
+                        </code>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 0.8rem; line-height: 1.5;">
+                        返回币种在4h/12h/24h/48h周期的价格位置百分比
+                    </div>
+                </div>
+                
+                <!-- 统计数据API -->
+                <div style="background: rgba(0, 0, 0, 0.2); border-radius: 12px; padding: 25px; border-left: 4px solid #10b981;">
+                    <h3 style="color: #10b981; font-size: 1.3rem; margin-bottom: 15px;">📊 统计数据</h3>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 首页统计</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/stats
+                        </code>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 模块统计</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/modules/stats
+                        </code>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 0.8rem; line-height: 1.5;">
+                        获取系统统计数据，包括急涨急跌、恐慌指数等
+                    </div>
+                </div>
+                
+                <!-- V1V2成交系统API -->
+                <div style="background: rgba(0, 0, 0, 0.2); border-radius: 12px; padding: 25px; border-left: 4px solid #ef4444;">
+                    <h3 style="color: #ef4444; font-size: 1.3rem; margin-bottom: 15px;">💰 V1V2成交系统</h3>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 最新数据</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/v1v2/latest
+                        </code>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 设置</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/v1v2/settings
+                        </code>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 0.8rem; line-height: 1.5;">
+                        27币种5分钟成交额，V1/V2级别分类
+                    </div>
+                </div>
+                
+                <!-- 涨跌速API -->
+                <div style="background: rgba(0, 0, 0, 0.2); border-radius: 12px; padding: 25px; border-left: 4px solid #8b5cf6;">
+                    <h3 style="color: #8b5cf6; font-size: 1.3rem; margin-bottom: 15px;">⚡ 1分钟涨跌速</h3>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 最新数据</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/price-speed/latest
+                        </code>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 历史数据</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/price-speed/history/&lt;symbol&gt;
+                        </code>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 0.8rem; line-height: 1.5;">
+                        实时监控1分钟涨跌幅，15秒预警系统
+                    </div>
+                </div>
+                
+                <!-- Google Drive监控API -->
+                <div style="background: rgba(0, 0, 0, 0.2); border-radius: 12px; padding: 25px; border-left: 4px solid #ec4899;">
+                    <h3 style="color: #ec4899; font-size: 1.3rem; margin-bottom: 15px;">📡 Google Drive监控</h3>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET 检测器状态</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/gdrive-detector/status
+                        </code>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 8px;">GET TXT文件列表</div>
+                        <code style="display: block; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; color: #4ade80; font-size: 0.85rem; overflow-x: auto;">
+                            /api/gdrive-detector/txt-files
+                        </code>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 0.8rem; line-height: 1.5;">
+                        每30秒检测TXT文件更新，实时追踪数据源
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background: rgba(0, 212, 255, 0.1); border-radius: 10px; border: 1px solid rgba(0, 212, 255, 0.3);">
+                <h4 style="color: #00d4ff; font-size: 1.1rem; margin-bottom: 12px;">💡 使用说明</h4>
+                <ul style="color: rgba(255,255,255,0.7); font-size: 0.9rem; line-height: 1.8; padding-left: 25px;">
+                    <li>所有API返回JSON格式数据</li>
+                    <li>成功响应包含 <code style="color: #4ade80; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">success: true</code></li>
+                    <li>时间格式：YYYY-MM-DD HH:MM:SS（北京时间 UTC+8）</li>
+                    <li>更多API接口请访问各模块页面查看详细文档</li>
+                </ul>
             </div>
         </div>
         
@@ -566,6 +1061,107 @@
                 console.error('获取模块统计数据失败:', err);
             });
         
+        // 加载比价系统创新高/创新低数据
+        fetch('/api/price-comparison/breakthrough-stats')
+            .then(res => res.json())
+            .then(response => {
+                if (response.success && response.data) {
+                    const todayStats = response.data.today || {};
+                    document.getElementById('price-high').textContent = todayStats.new_high || 0;
+                    document.getElementById('price-low').textContent = todayStats.new_low || 0;
+                }
+            })
+            .catch(err => {
+                console.error('获取创新高/创新低数据失败:', err);
+            });
+        
+        // 加载TG推送系统状态（带超时控制）
+        function loadTelegramStatus() {
+            // 创建超时控制器
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时（增加到10秒）
+            
+            fetch('/api/telegram/status', { 
+                signal: controller.signal,
+                cache: 'no-cache' // 禁用缓存，获取最新数据
+            })
+                .then(res => {
+                    clearTimeout(timeoutId);
+                    if (!res.ok) throw new Error('HTTP error ' + res.status);
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // 更新运行状态
+                        const statusEl = document.getElementById('tg-status');
+                        if (data.is_running) {
+                            statusEl.textContent = '✅ ' + data.status;
+                            statusEl.style.color = '#10b981';
+                        } else {
+                            statusEl.textContent = '❌ ' + data.status;
+                            statusEl.style.color = '#ef4444';
+                        }
+                        
+                        // 更新已推送数量
+                        document.getElementById('tg-total-sent').textContent = data.total_sent || 0;
+                        
+                        // 更新最近消息类型
+                        const lastMessageEl = document.getElementById('tg-last-message');
+                        if (data.last_messages && data.last_messages.length > 0) {
+                            lastMessageEl.textContent = data.last_messages[0];
+                        } else {
+                            lastMessageEl.textContent = '暂无';
+                        }
+                        
+                        // 更新最后更新时间
+                        const lastUpdateEl = document.getElementById('tg-last-update');
+                        if (data.last_update && data.last_update !== '未知') {
+                            lastUpdateEl.textContent = formatTime(data.last_update);
+                        } else {
+                            lastUpdateEl.textContent = '-';
+                        }
+                    }
+                })
+                .catch(err => {
+                    clearTimeout(timeoutId);
+                    if (err.name === 'AbortError') {
+                        console.warn('TG状态请求超时（10秒）');
+                        document.getElementById('tg-status').textContent = '⏱️ 加载中...';
+                    } else {
+                        console.error('获取TG推送状态失败:', err);
+                        document.getElementById('tg-status').textContent = '⚠️ 网络异常';
+                    }
+                    document.getElementById('tg-status').style.color = '#f59e0b';
+                });
+        }
+        
+        // 初始加载TG状态
+        loadTelegramStatus();
+        
+        // 每30秒刷新TG状态
+        setInterval(loadTelegramStatus, 30000);
+        
+        // 添加TG卡片点击事件监听器
+        const tgCard = document.getElementById('tg-card');
+        const tgManageBtn = document.getElementById('tg-manage-btn');
+        
+        if (tgCard) {
+            tgCard.addEventListener('click', function(e) {
+                // 如果点击的不是管理面板按钮，则跳转
+                if (e.target !== tgManageBtn && !tgManageBtn.contains(e.target)) {
+                    window.location.href = '/telegram-dashboard';
+                }
+            });
+        }
+        
+        // 确保管理面板按钮点击时停止冒泡
+        if (tgManageBtn) {
+            tgManageBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.location.href = '/telegram-dashboard';
+            });
+        }
+        
         // 加载统计栏数据
         fetch('/api/stats')
             .then(res => res.json())
@@ -601,31 +1197,101 @@
                 console.error('获取统计数据失败:', err);
             });
         
-        // 加载星星系统数据
+        // 加载星星系统和币种池数据
         fetch('/api/star-system/data')
             .then(res => res.json())
             .then(response => {
-                if (response.success && response.data.summary) {
-                    const summary = response.data.summary;
-                    const totalEl = document.getElementById('star-total');
-                    const solidEl = document.getElementById('star-solid');
-                    const hollowEl = document.getElementById('star-hollow');
-                    if (totalEl) totalEl.textContent = summary.total_stars;
-                    if (solidEl) solidEl.textContent = summary.solid_stars;
-                    if (hollowEl) hollowEl.textContent = summary.hollow_stars;
-                    
-                    // 更新时间（从历史数据查询模块获取）
+                if (response.success) {
+                    // 更新星星系统卡片数据
+                    const starData = response.data || {};
+                    if (starData.count_score) {
+                        document.getElementById('star-count-score').textContent = starData.count_score.display || '-';
+                    }
+                    if (starData.solid_star) {
+                        document.getElementById('star-solid-stars').textContent = starData.solid_star.display || '-';
+                    }
+                    if (starData.hollow_star) {
+                        document.getElementById('star-hollow-stars').textContent = starData.hollow_star.display || '-';
+                    }
+                    // 星星系统更新时间（从模块统计获取）
                     fetch('/api/modules/stats')
                         .then(res => res.json())
-                        .then(data => {
-                            if (data.success && data.query_module) {
-                                document.getElementById('star-time').textContent = formatTime(data.query_module.last_update);
+                        .then(statsData => {
+                            if (statsData.success && statsData.query_module) {
+                                document.getElementById('star-time').textContent = formatTime(statsData.query_module.last_update);
                             }
                         });
+                    
+                    // 更新币种池数据
+                    const v1v2 = response.v1v2_coins || {};
+                    const coinLists = response.coin_lists || {};
+                    
+                    // V1/V2币种数量
+                    const v1Count = (v1v2.v1_coins || []).length;
+                    const v2Count = (v1v2.v2_coins || []).length;
+                    document.getElementById('pool-v1-count').textContent = v1Count + '个';
+                    document.getElementById('pool-v2-count').textContent = v2Count + '个';
+                    
+                    // 只有急涨的币种
+                    const onlyRushUpCoins = coinLists.only_rush_up_coins || [];
+                    document.getElementById('pool-only-rush-up').textContent = 
+                        onlyRushUpCoins.length + '个: ' + (onlyRushUpCoins.slice(0, 3).join(', ') + (onlyRushUpCoins.length > 3 ? '...' : ''));
+                    
+                    // 急涨>急跌的币种
+                    const rushUpGtDownCoins = coinLists.rush_up_gt_down_coins || [];
+                    document.getElementById('pool-rush-up-gt-down').textContent = 
+                        rushUpGtDownCoins.length + '个: ' + (rushUpGtDownCoins.slice(0, 3).join(', ') + (rushUpGtDownCoins.length > 3 ? '...' : ''));
+                    
+                    // 优先级≥4的币种
+                    const priorityHighCoins = coinLists.priority_high_coins || [];
+                    document.getElementById('pool-priority-high').textContent = 
+                        priorityHighCoins.length + '个: ' + (priorityHighCoins.length > 0 ? priorityHighCoins.join(', ') : '无');
                 }
             })
             .catch(err => {
-                console.error('获取星星系统数据失败:', err);
+                console.error('获取币种池数据失败:', err);
+            });
+        
+        // 加载V1V2成交系统数据
+        fetch('/api/v1v2/latest')
+            .then(res => res.json())
+            .then(response => {
+                if (response.success && response.data) {
+                    const data = response.data;
+                    
+                    // 统计V1和V2级别的币种数量
+                    const v1Count = data.filter(coin => coin.level === 'V1').length;
+                    const v2Count = data.filter(coin => coin.level === 'V2').length;
+                    
+                    document.getElementById('v1v2-v1-count').textContent = v1Count + ' 个';
+                    document.getElementById('v1v2-v2-count').textContent = v2Count + ' 个';
+                    document.getElementById('v1v2-time').textContent = formatTime(response.update_time || '-');
+                }
+            })
+            .catch(err => {
+                console.error('获取V1V2数据失败:', err);
+            });
+        
+        // 加载1分钟涨跌速数据
+        fetch('/api/price-speed/latest')
+            .then(res => res.json())
+            .then(response => {
+                if (response.success && response.data) {
+                    const data = response.data;
+                    const upCount = data.filter(coin => 
+                        coin.alert_level && coin.alert_level.includes('up') && coin.alert_level !== 'normal'
+                    ).length;
+                    const downCount = data.filter(coin => 
+                        coin.alert_level && coin.alert_level.includes('down') && coin.alert_level !== 'normal'
+                    ).length;
+                    
+                    document.getElementById('price-speed-up-count').textContent = upCount + ' 个';
+                    document.getElementById('price-speed-down-count').textContent = downCount + ' 个';
+                    document.getElementById('price-speed-time').textContent = formatTime(response.update_time || '-');
+                }
+            })
+            .catch(err => {
+                console.error('获取涨跌速数据失败:', err);
             });
         
         // 加载监控状态数据
@@ -771,6 +1437,67 @@
                 console.error('获取OKEX指数数据失败:', err);
             });
         
+        // 加载Google Drive检测器状态
+        fetch('/api/gdrive-detector/status')
+            .then(res => res.json())
+            .then(response => {
+                if (response.success) {
+                    const data = response.data;
+                    
+                    // 检测器状态
+                    const statusEl = document.getElementById('gdrive-status');
+                    if (data.detector_running) {
+                        statusEl.textContent = '✅ 运行中';
+                        statusEl.style.color = '#10b981';
+                    } else {
+                        statusEl.textContent = '❌ 停止';
+                        statusEl.style.color = '#ef4444';
+                    }
+                    
+                    // 文件时间
+                    const fileTimeEl = document.getElementById('gdrive-file-time');
+                    if (data.file_timestamp) {
+                        fileTimeEl.textContent = formatTime(data.file_timestamp);
+                    } else {
+                        fileTimeEl.textContent = '-';
+                    }
+                    
+                    // 延迟
+                    const delayEl = document.getElementById('gdrive-delay');
+                    if (data.delay_minutes !== null) {
+                        const delay = Math.round(data.delay_minutes);
+                        delayEl.textContent = delay + ' 分钟';
+                        
+                        // 根据延迟设置颜色
+                        if (delay < 15) {
+                            delayEl.style.color = '#10b981';
+                        } else if (delay < 30) {
+                            delayEl.style.color = '#f59e0b';
+                        } else {
+                            delayEl.style.color = '#ef4444';
+                        }
+                    } else {
+                        delayEl.textContent = '-';
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('获取Google Drive检测器状态失败:', err);
+            });
+        
+        // 加载最新文件名
+        fetch('/api/gdrive-detector/txt-files')
+            .then(res => res.json())
+            .then(response => {
+                if (response.success && response.files && response.files.length > 0) {
+                    const latestFileEl = document.getElementById('gdrive-latest-file');
+                    latestFileEl.textContent = response.files[0];
+                }
+            })
+            .catch(err => {
+                console.error('获取最新文件名失败:', err);
+            });
+        
         // 每30秒刷新一次
         setInterval(() => {
             // 刷新模块统计数据
@@ -790,9 +1517,8 @@
                         document.getElementById('panic-days').textContent = data.panic_module.data_days + ' 天';
                         document.getElementById('panic-time').textContent = data.panic_module.last_update;
                         
-                        // 比价系统、星星系统、得分系统更新时间
+                        // 比价系统、得分系统更新时间
                         document.getElementById('price-time').textContent = formatTime(data.query_module.last_update);
-                        document.getElementById('star-time').textContent = formatTime(data.query_module.last_update);
                         document.getElementById('depth-time').textContent = formatTime(data.query_module.last_update);
                         document.getElementById('chart-time').textContent = formatTime(data.query_module.last_update);
                         document.getElementById('overview-time').textContent = formatTime(data.query_module.last_update);
@@ -824,22 +1550,6 @@
                     document.getElementById('updateTime').textContent = '更新: ' + (data.last_update_time || '-');
                 })
                 .catch(err => console.error('刷新统计数据失败:', err));
-            
-            // 刷新星星系统数据
-            fetch('/api/star-system/data')
-                .then(res => res.json())
-                .then(response => {
-                    if (response.success && response.data.summary) {
-                        const summary = response.data.summary;
-                        const totalEl = document.getElementById('star-total');
-                        const solidEl = document.getElementById('star-solid');
-                        const hollowEl = document.getElementById('star-hollow');
-                        if (totalEl) totalEl.textContent = summary.total_stars;
-                        if (solidEl) solidEl.textContent = summary.solid_stars;
-                        if (hollowEl) hollowEl.textContent = summary.hollow_stars;
-                    }
-                })
-                .catch(err => console.error('刷新星星系统数据失败:', err));
             
             // 刷新监控状态数据
             fetch('/api/monitor/status')
@@ -969,10 +1679,234 @@
                         if (timeEl && response.record_time) {
                             timeEl.textContent = formatTime(response.record_time);
                         }
+                        
+
                     }
                 })
                 .catch(err => console.error('刷新位置系统数据失败:', err));
+            
+            // 刷新支撑压力线系统数据
+            fetch('/api/support-resistance/latest')
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success && response.data) {
+                        const data = response.data;
+                        
+                        // 分别统计4种情况的币种
+                        const scenario1Coins = data.filter(c => c.alert_scenario_1);
+                        const scenario2Coins = data.filter(c => c.alert_scenario_2);
+                        const scenario3Coins = data.filter(c => c.alert_scenario_3);
+                        const scenario4Coins = data.filter(c => c.alert_scenario_4);
+                        
+                        // 更新基本统计
+                        document.getElementById('sr-count').textContent = data.length;
+                        document.getElementById('sr-time').textContent = formatTime(response.update_time || '-');
+                        
+                        // 更新4个预警框
+                        const formatCoinWithPosition = (coin, positionField) => {
+                            const symbol = coin.symbol.replace('USDT', '');
+                            const position = coin[positionField] || 0;
+                            return `<span style="display: inline-block; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; margin: 2px;">${symbol} <span style="opacity: 0.7;">${position.toFixed(1)}%</span></span>`;
+                        };
+                        
+                        const formatCoins = (coins, positionField) => {
+                            if (coins.length === 0) return '<span style="color: rgba(255,255,255,0.3);">暂无预警</span>';
+                            return coins.map(c => formatCoinWithPosition(c, positionField)).join(' ');
+                        };
+                        
+                        document.getElementById('sr-scenario-1').innerHTML = formatCoins(scenario1Coins, 'position_s2_r1');
+                        document.getElementById('sr-scenario-2').innerHTML = formatCoins(scenario2Coins, 'position_s1_r2');
+                        document.getElementById('sr-scenario-3').innerHTML = formatCoins(scenario3Coins, 'position_s1_r2');
+                        document.getElementById('sr-scenario-4').innerHTML = formatCoins(scenario4Coins, 'position_s1_r1');
+                    }
+                })
+                .catch(err => console.error('刷新支撑压力线数据失败:', err));
+            
+            // 刷新V1V2成交系统数据
+            fetch('/api/v1v2/latest')
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success && response.data) {
+                        const data = response.data;
+                        const v1Count = data.filter(coin => coin.level === 'V1').length;
+                        const v2Count = data.filter(coin => coin.level === 'V2').length;
+                        
+                        document.getElementById('v1v2-v1-count').textContent = v1Count + ' 个';
+                        document.getElementById('v1v2-v2-count').textContent = v2Count + ' 个';
+                        document.getElementById('v1v2-time').textContent = formatTime(response.update_time || '-');
+                    }
+                })
+                .catch(err => console.error('刷新V1V2数据失败:', err));
+            
+            // 刷新交易信号系统数据
+            fetch('/api/trading-signals/analyze')
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success && response.data) {
+                        const data = response.data;
+                        document.getElementById('ts-buy1-count').textContent = data.buy_point_1_count + ' 个';
+                        document.getElementById('ts-buy2-count').textContent = data.buy_point_2_count + ' 个';
+                        document.getElementById('ts-total-count').textContent = data.total_coins + ' 个';
+                        document.getElementById('ts-time').textContent = formatTime(data.update_time || '-');
+                    }
+                })
+                .catch(err => console.error('刷新交易信号数据失败:', err));
+            
+            // 刷新1分钟涨跌速数据
+            fetch('/api/price-speed/latest')
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success && response.data) {
+                        const data = response.data;
+                        const upCount = data.filter(coin => 
+                            coin.alert_level && coin.alert_level.includes('up') && coin.alert_level !== 'normal'
+                        ).length;
+                        const downCount = data.filter(coin => 
+                            coin.alert_level && coin.alert_level.includes('down') && coin.alert_level !== 'normal'
+                        ).length;
+                        
+                        document.getElementById('price-speed-up-count').textContent = upCount + ' 个';
+                        document.getElementById('price-speed-down-count').textContent = downCount + ' 个';
+                        document.getElementById('price-speed-time').textContent = formatTime(response.update_time || '-');
+                    }
+                })
+                .catch(err => console.error('刷新涨跌速数据失败:', err));
+            
+            // 刷新Google Drive检测器状态
+            fetch('/api/gdrive-detector/status')
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success) {
+                        const data = response.data;
+                        
+                        const statusEl = document.getElementById('gdrive-status');
+                        if (data.detector_running) {
+                            statusEl.textContent = '✅ 运行中';
+                            statusEl.style.color = '#10b981';
+                        } else {
+                            statusEl.textContent = '❌ 停止';
+                            statusEl.style.color = '#ef4444';
+                        }
+                        
+                        const fileTimeEl = document.getElementById('gdrive-file-time');
+                        if (data.file_timestamp) {
+                            fileTimeEl.textContent = formatTime(data.file_timestamp);
+                        } else {
+                            fileTimeEl.textContent = '-';
+                        }
+                        
+                        const delayEl = document.getElementById('gdrive-delay');
+                        if (data.delay_minutes !== null) {
+                            const delay = Math.round(data.delay_minutes);
+                            delayEl.textContent = delay + ' 分钟';
+                            
+                            if (delay < 15) {
+                                delayEl.style.color = '#10b981';
+                            } else if (delay < 30) {
+                                delayEl.style.color = '#f59e0b';
+                            } else {
+                                delayEl.style.color = '#ef4444';
+                            }
+                        } else {
+                            delayEl.textContent = '-';
+                        }
+                    }
+                })
+                .catch(err => console.error('刷新Google Drive检测器状态失败:', err));
+            
+            // 刷新最新文件名
+            fetch('/api/gdrive-detector/txt-files')
+                .then(res => res.json())
+                .then(response => {
+                    if (response.success && response.files && response.files.length > 0) {
+                        const latestFileEl = document.getElementById('gdrive-latest-file');
+                        latestFileEl.textContent = response.files[0];
+                    }
+                })
+                .catch(err => console.error('刷新最新文件名失败:', err));
         }, 30000);
+
+        // 加载实时市场原始数据
+        fetch('/api/opening-logic/suggestion')
+            .then(res => res.json())
+            .then(response => {
+                if (response.success && response.data) {
+                    const data = response.data;
+                    
+                    // 更新实时市场原始数据卡片
+                    if (data.raw_data) {
+                        const raw = data.raw_data;
+                        
+                        // 星星数据
+                        if (raw.star_data) {
+                            document.getElementById('market-solid-stars').textContent = raw.star_data.solid_stars || 0;
+                            document.getElementById('market-hollow-stars').textContent = raw.star_data.hollow_stars || 0;
+                            document.getElementById('market-rush-up').textContent = raw.star_data.rush_up || 0;
+                            document.getElementById('market-rush-down').textContent = raw.star_data.rush_down || 0;
+                        }
+                        
+                        // BTC/ETH涨跌
+                        if (raw.btc_eth_change) {
+                            const btcChange = raw.btc_eth_change.BTC || 0;
+                            const ethChange = raw.btc_eth_change.ETH || 0;
+                            
+                            const btcEl = document.getElementById('market-btc-change');
+                            btcEl.textContent = (btcChange > 0 ? '+' : '') + btcChange.toFixed(2) + '%';
+                            btcEl.style.color = btcChange >= 0 ? '#4ade80' : '#f87171';
+                            
+                            const ethEl = document.getElementById('market-eth-change');
+                            ethEl.textContent = (ethChange > 0 ? '+' : '') + ethChange.toFixed(2) + '%';
+                            ethEl.style.color = ethChange >= 0 ? '#4ade80' : '#f87171';
+                        }
+                        
+                        // 全网持仓
+                        if (raw.total_position !== undefined) {
+                            document.getElementById('market-total-position').textContent = 
+                                raw.total_position.toFixed(2) + ' 亿美元';
+                        }
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('获取市场数据失败:', err);
+            });
+        
+        // 加载K线指标系统状态
+        fetch('/api/kline-indicators/collector-status')
+            .then(res => res.json())
+            .then(response => {
+                if (response.success) {
+                    // 状态
+                    const statusEl = document.getElementById('kline-status');
+                    if (response.status === 'running') {
+                        statusEl.textContent = '运行中';
+                        statusEl.style.color = '#10b981';
+                    } else if (response.status === 'stopped') {
+                        statusEl.textContent = '已停止';
+                        statusEl.style.color = '#ef4444';
+                    } else {
+                        statusEl.textContent = '未启动';
+                        statusEl.style.color = '#f59e0b';
+                    }
+                    
+                    // 指标数据条数
+                    const countEl = document.getElementById('kline-indicators-count');
+                    if (countEl && response.data_counts) {
+                        countEl.textContent = response.data_counts.indicators || 0;
+                    }
+                    
+                    // 最后采集时间
+                    const timeEl = document.getElementById('kline-last-time');
+                    if (timeEl && response.last_collection_time) {
+                        // 只显示时间部分 HH:MM:SS
+                        const timePart = response.last_collection_time.split(' ')[1];
+                        timeEl.textContent = timePart || '-';
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('获取K线指标系统状态失败:', err);
+            });
     </script>
 </body>
 </html>

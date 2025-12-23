@@ -75,8 +75,9 @@ def calculate_star_system(data):
     else:
         results['diff_negative'] = {'stars': 0, 'type': '无', 'display': '---'}
     
-    # 5. 全网持仓量（单位：亿）
-    holdings = data.get('holdings', 0)
+    # 5. 全网持仓量（输入单位：元，需转换为亿进行评分）
+    holdings_raw = data.get('holdings', 0)
+    holdings = holdings_raw / 100000000  # 转换为亿
     if holdings <= 91:
         results['holdings'] = {'stars': 3, 'type': '实心', 'display': '★★★'}
         solid_stars += 3
@@ -145,7 +146,14 @@ def calculate_star_system(data):
         'display': f'{only_rush_down_count}个币种'
     }
     
-    # 12. 今天创新低记录
+    # 12. 急跌大于急涨
+    rush_down_gt_up_count = data.get('rush_down_gt_up_count', 0)
+    results['rush_down_gt_up'] = {
+        'count': rush_down_gt_up_count,
+        'display': f'{rush_down_gt_up_count}个币种'
+    }
+    
+    # 13. 今天创新低记录
     new_low_today = data.get('new_low_today', 0)
     if new_low_today > 10:
         results['new_low_today'] = {'stars': 3, 'type': '空心', 'display': '☆☆☆'}
@@ -159,7 +167,7 @@ def calculate_star_system(data):
     else:
         results['new_low_today'] = {'stars': 0, 'type': '无', 'display': '---'}
     
-    # 13. 今天创新高记录
+    # 14. 今天创新高记录
     new_high_today = data.get('new_high_today', 0)
     if new_high_today > 10:
         results['new_high_today'] = {'stars': 3, 'type': '实心', 'display': '★★★'}
@@ -173,7 +181,7 @@ def calculate_star_system(data):
     else:
         results['new_high_today'] = {'stars': 0, 'type': '无', 'display': '---'}
     
-    # 14. 计次得分（根据时间段）
+    # 15. 计次得分（根据时间段）
     count = data.get('count', 0)
     snapshot_time = data.get('snapshot_time')
     if snapshot_time:

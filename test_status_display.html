@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>状态显示测试</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1a1a1a; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; background: #2a2a2a; border-radius: 8px; }
+        .status { font-weight: bold; padding: 5px 10px; border-radius: 4px; }
+        .running { background: #10b981; }
+        .stopped { background: #ef4444; }
+        .not-started { background: #f59e0b; }
+    </style>
+</head>
+<body>
+    <h1>监控系统状态测试</h1>
+    
+    <div class="test-section">
+        <h2>K线指标系统</h2>
+        <p>API状态: <span id="kline-api-status">检测中...</span></p>
+        <p>显示状态: <span id="kline-display-status" class="status">-</span></p>
+        <p>数据延迟: <span id="kline-delay">-</span> 分钟</p>
+        <p>最后采集: <span id="kline-time">-</span></p>
+    </div>
+    
+    <div class="test-section">
+        <h2>交易信号监控</h2>
+        <p>总记录: <span id="signal-total">-</span></p>
+        <p>最后更新: <span id="signal-time">-</span></p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Panic Wash指数</h2>
+        <p>总记录: <span id="panic-total">-</span></p>
+        <p>最后更新: <span id="panic-time">-</span></p>
+    </div>
+    
+    <div class="test-section">
+        <h2>API测试日志</h2>
+        <pre id="log" style="background: #000; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto;"></pre>
+    </div>
+    
+    <script>
+        function log(msg) {
+            const logEl = document.getElementById('log');
+            logEl.textContent += msg + '\n';
+            console.log(msg);
+        }
+        
+        // 测试K线指标系统状态
+        log('正在测试K线指标系统API...');
+        fetch('/api/kline-indicators/collector-status')
+            .then(res => {
+                log(`API响应状态码: ${res.status}`);
+                return res.json();
+            })
+            .then(response => {
+                log('API响应数据: ' + JSON.stringify(response, null, 2));
+                
+                document.getElementById('kline-api-status').textContent = JSON.stringify(response.status);
+                
+                if (response.success) {
+                    const statusEl = document.getElementById('kline-display-status');
+                    if (response.status === 'running') {
+                        statusEl.textContent = '运行中';
+                        statusEl.className = 'status running';
+                        log('✓ 状态设置为: 运行中');
+                    } else if (response.status === 'stopped') {
+                        statusEl.textContent = '已停止';
+                        statusEl.className = 'status stopped';
+                        log('⚠ 状态设置为: 已停止');
+                    } else {
+                        statusEl.textContent = '未启动';
+                        statusEl.className = 'status not-started';
+                        log('⚠ 状态设置为: 未启动');
+                    }
+                    
+                    document.getElementById('kline-delay').textContent = response.minutes_since_last;
+                    document.getElementById('kline-time').textContent = response.last_collection_time;
+                } else {
+                    log('✗ API返回success=false');
+                }
+            })
+            .catch(err => {
+                log('✗ API请求失败: ' + err.message);
+                console.error(err);
+            });
+        
+        // 测试模块统计API
+        log('\n正在测试模块统计API...');
+        fetch('/api/modules/stats')
+            .then(res => {
+                log(`API响应状态码: ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                log('模块统计数据: ' + JSON.stringify(data, null, 2));
+                
+                if (data.success) {
+                    document.getElementById('signal-total').textContent = data.signal_module.total_records;
+                    document.getElementById('signal-time').textContent = data.signal_module.last_update;
+                    
+                    document.getElementById('panic-total').textContent = data.panic_module.total_records;
+                    document.getElementById('panic-time').textContent = data.panic_module.last_update;
+                    
+                    log('✓ 模块统计数据更新成功');
+                }
+            })
+            .catch(err => {
+                log('✗ 模块统计API请求失败: ' + err.message);
+                console.error(err);
+            });
+    </script>
+</body>
+</html>
